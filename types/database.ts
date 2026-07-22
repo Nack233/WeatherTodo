@@ -54,7 +54,6 @@ export interface Expense {
 
 export interface ExpenseInsert {
     category: string;
-    category_id?: string | null;
     amount: number;
     type: TransactionType;
     note?: string | null;

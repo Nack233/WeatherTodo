@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import type { Todo, TodoInsert, TodoUpdate, ActionResult } from '@/types/database';
+import { ensureProfileExists } from '@/utils/supabase/profile';
 
 // ==========================================
 // READ — Fetch all todos for current user
@@ -41,6 +42,11 @@ export async function createTodo(input: TodoInsert): Promise<ActionResult<Todo>>
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
             return { error: 'กรุณาเข้าสู่ระบบก่อน' };
+        }
+
+        const profileResult = await ensureProfileExists(supabase, user);
+        if ('error' in profileResult) {
+            return { error: profileResult.error };
         }
 
         const { data, error } = await supabase

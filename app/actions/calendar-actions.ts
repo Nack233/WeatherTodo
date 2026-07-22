@@ -2,6 +2,7 @@
 
 import { createClient } from '@/utils/supabase/server';
 import type { CalendarEvent, CalendarEventInsert, ActionResult } from '@/types/database';
+import { ensureProfileExists } from '@/utils/supabase/profile';
 
 // ==========================================
 // READ — Fetch calendar events for user
@@ -38,6 +39,11 @@ export async function createCalendarEvent(input: CalendarEventInsert): Promise<A
         const { data: { user }, error: authError } = await supabase.auth.getUser();
         if (authError || !user) {
             return { error: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' };
+        }
+
+        const profileResult = await ensureProfileExists(supabase, user);
+        if ('error' in profileResult) {
+            return { error: profileResult.error };
         }
 
         const { data, error } = await supabase
