@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { ToastProvider } from '@/app/components/Toast';
 
 // ==========================================
@@ -64,7 +64,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         initSession();
 
         // Listen for auth state changes (login, logout, token refresh)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
             setUser(session?.user ? mapUser(session.user) : null);
             setIsLoading(false);
         });
