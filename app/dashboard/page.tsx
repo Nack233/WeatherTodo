@@ -10,6 +10,7 @@ import Weather from './weather';
 import Todo from './todo';
 import Calendar from './calendar';
 import Tracker from './tracker';
+import FuelPrices from './fuel-prices';
 
 // Icons
 import { 
@@ -62,6 +63,7 @@ export default function DashboardPage() {
             case 'todo': return 'รายการต้องทำ (To-Do List)';
             case 'calendar': return 'ปฏิทินกิจกรรมและการนัดหมาย';
             case 'tracker': return 'บันทึกรายรับ-รายจ่าย';
+            case 'fuel-prices': return 'ราคาน้ำมัน EPPO';
             default: return 'แดชบอร์ด';
         }
     };
@@ -78,6 +80,8 @@ export default function DashboardPage() {
                 return <Calendar />;
             case 'tracker':
                 return <Tracker />;
+            case 'fuel-prices':
+                return <FuelPrices />;
             default:
                 return <Overview user={user} setActiveTab={setActiveTab} />;
         }
@@ -132,6 +136,13 @@ export default function DashboardPage() {
                     >
                         <Wallet />
                         <span>รายรับ-รายจ่าย</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'fuel-prices' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('fuel-prices')}
+                    >
+                        <MapPin />
+                        <span>ราคาน้ำมัน</span>
                     </button>
                 </nav>
                 <div className="sidebar-footer">
@@ -211,6 +222,13 @@ export default function DashboardPage() {
                 >
                     <Wallet />
                     <span>การเงิน</span>
+                </button>
+                <button 
+                    className={`bottom-nav-item ${activeTab === 'fuel-prices' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('fuel-prices')}
+                >
+                    <MapPin />
+                    <span>น้ำมัน</span>
                 </button>
             </nav>
         </div>

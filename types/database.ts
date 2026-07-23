@@ -96,6 +96,25 @@ export interface Settings {
 }
 
 // -------------------------------------------
+// FUEL PRICES
+// -------------------------------------------
+export interface FuelPrice {
+    id: string;
+    brand: string;
+    fuel_type: string;
+    price: number;
+    effective_date: string;
+    created_at: string | null;
+}
+
+export interface FuelPriceInsert {
+    brand: string;
+    fuel_type: string;
+    price: number;
+    effective_date?: string;
+}
+
+// -------------------------------------------
 // GENERIC ACTION RESULT
 // -------------------------------------------
 export interface ActionResult<T = void> {

@@ -617,6 +617,232 @@ input:-webkit-autofill:focus {
     gap: 1.75rem;
 }
 
+/* Fuel Prices */
+.fuel-prices-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+.fuel-hero {
+    padding: 1.75rem;
+}
+.fuel-hero-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.fuel-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-cyan);
+    margin-bottom: 0.6rem;
+}
+.fuel-title {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+.fuel-subtitle {
+    margin-top: 0.35rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+.fuel-refresh-btn {
+    white-space: nowrap;
+}
+.fuel-hero-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-top: 1.25rem;
+}
+.fuel-metric {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.95rem 1rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+}
+.fuel-metric svg {
+    width: 18px;
+    height: 18px;
+    color: var(--accent-cyan);
+    flex-shrink: 0;
+}
+.fuel-metric .label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+}
+.fuel-metric strong {
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+.fuel-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+.fuel-meta-row span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.55rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.02);
+}
+.fuel-brand-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+}
+.fuel-brand-card {
+    border-top: 3px solid transparent;
+    position: relative;
+    overflow: hidden;
+}
+.fuel-brand-card::after {
+    content: '';
+    position: absolute;
+    inset: auto -20% -50% auto;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 68%);
+    pointer-events: none;
+}
+.fuel-brand-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.fuel-brand-header h3 {
+    margin-top: 0.65rem;
+    font-size: 1.35rem;
+    color: var(--text-primary);
+}
+.fuel-brand-header svg {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+.fuel-brand-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 54px;
+    padding: 0.35rem 0.55rem;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.fuel-brand-price {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+}
+.fuel-brand-price .label {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+.fuel-brand-price strong {
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+.fuel-brand-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.fuel-item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+.fuel-item-row:hover {
+    border-color: var(--border-color);
+    transform: translateY(-1px);
+}
+.fuel-item-name {
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.fuel-item-price {
+    font-size: 0.98rem;
+    font-weight: 700;
+    color: var(--accent-cyan);
+    white-space: nowrap;
+}
+.fuel-loading-card {
+    min-height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.fuel-error-card {
+    color: #fca5a5;
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+@media (max-width: 1100px) {
+    .fuel-hero-metrics,
+    .fuel-brand-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .fuel-hero-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .fuel-hero {
+        padding: 1.25rem;
+    }
+
+    .fuel-title {
+        font-size: 1.4rem;
+    }
+
+    .fuel-brand-price,
+    .fuel-item-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
 /* Quick Weather Details */
 .weather-quick-body {
     display: flex;
