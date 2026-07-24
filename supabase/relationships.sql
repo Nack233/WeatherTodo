@@ -16,6 +16,9 @@ alter table public.profiles
     references auth.users (id)
     on delete cascade;
 
+alter table public.profiles
+    add column if not exists updated_at timestamp with time zone not null default now();
+
 -- Auto-create a profile row when a new auth user signs up.
 create or replace function public.handle_new_user()
 returns trigger
@@ -53,6 +56,9 @@ alter table public.todos
     references public.profiles (id)
     on delete cascade;
 
+alter table public.todos
+    add column if not exists updated_at timestamp with time zone not null default now();
+
 alter table public.expense_categories
     drop constraint if exists expense_categories_user_id_fkey;
 
@@ -80,6 +86,12 @@ alter table public.expenses
     references public.expense_categories (id)
     on delete set null;
 
+alter table public.expense_categories
+    add column if not exists updated_at timestamp with time zone not null default now();
+
+alter table public.expenses
+    add column if not exists updated_at timestamp with time zone not null default now();
+
 alter table public.calendar_events
     drop constraint if exists calendar_events_user_id_fkey;
 
@@ -88,6 +100,9 @@ alter table public.calendar_events
     foreign key (user_id)
     references public.profiles (id)
     on delete cascade;
+
+alter table public.calendar_events
+    add column if not exists updated_at timestamp with time zone not null default now();
 
 alter table public.settings
     drop constraint if exists settings_user_id_fkey;

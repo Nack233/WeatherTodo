@@ -50,6 +50,7 @@ export interface Expense {
     note: string | null;
     transaction_date: string;      // ISO date string "YYYY-MM-DD"
     created_at: string;
+    updated_at: string;
 }
 
 export interface ExpenseInsert {
@@ -73,6 +74,7 @@ export interface CalendarEvent {
     all_day: boolean;
     color: string;                 // e.g. "tag-blue", "tag-green", "tag-purple", "tag-red"
     created_at: string;
+    updated_at: string;
 }
 
 export interface CalendarEventInsert {
