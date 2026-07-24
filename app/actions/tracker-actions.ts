@@ -13,7 +13,7 @@ export async function getExpenses(): Promise<ActionResult<Expense[]>> {
 
         const { data, error } = await supabase
             .from('expenses')
-            .select('id, user_id, category_id, amount, type, note, transaction_date, created_at, expense_categories(name)')
+            .select('id, user_id, category_id, amount, type, note, transaction_date, created_at, updated_at, expense_categories(name)')
             .order('transaction_date', { ascending: false })
             .order('created_at', { ascending: false });
 
