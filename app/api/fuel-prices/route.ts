@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { getEppoFuelPrices } from '@/app/actions/fuel-actions';
+import { getEppoFuelPrices, syncEppoFuelPricesToSupabase } from '@/app/actions/fuel-actions';
 
 function formatThaiDate(dateString: string) {
     const date = new Date(`${dateString}T00:00:00`);
@@ -48,6 +48,9 @@ export async function GET() {
                     effectiveDate,
                 }, { status: 200 });
             }
+
+            const liveData = await syncEppoFuelPricesToSupabase();
+            return NextResponse.json(liveData, { status: 200 });
         } catch {
             // Fall back to live EPPO data if the table is empty or the admin client is unavailable.
         }
