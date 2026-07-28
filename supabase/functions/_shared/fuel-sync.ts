@@ -189,7 +189,7 @@ export async function fetchEppoFuelPrices(): Promise<FuelPriceSnapshot> {
 
 export interface FuelPricesRepository {
     from(table: string): {
-        upsert(values: FuelPriceDbRow[], options: { onConflict: string }): Promise<{ error: { message: string } | null }>;
+        upsert(values: FuelPriceDbRow[], options: { onConflict: string }): PromiseLike<{ error: { message: string } | null }>;
     };
 }
 
