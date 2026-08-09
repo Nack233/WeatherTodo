@@ -1044,6 +1044,11 @@ input:-webkit-autofill:focus {
     justify-content: space-between;
     gap: 2rem;
 }
+.weather-side-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
 .location-details h2 {
     font-size: 1.75rem;
     font-weight: 700;
@@ -1082,6 +1087,73 @@ input:-webkit-autofill:focus {
     font-weight: 600;
     color: var(--accent-cyan);
     margin-top: 0.5rem;
+}
+.weather-highlight-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+.weather-highlight-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.weather-highlight-pill.muted {
+    color: var(--text-secondary);
+}
+
+.hourly-forecast-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+.hourly-forecast-item {
+    display: grid;
+    grid-template-columns: 0.8fr 1.8fr 0.7fr 0.9fr;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+}
+.hourly-forecast-item:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-color);
+}
+.hourly-time {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+.hourly-condition {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.86rem;
+    color: var(--text-secondary);
+}
+.hourly-icon {
+    width: 18px;
+    height: 18px;
+    color: var(--accent-cyan);
+    flex-shrink: 0;
+}
+.hourly-temp {
+    font-size: 0.98rem;
+    font-weight: 700;
+    text-align: right;
+}
+.hourly-rain-prob {
+    justify-self: end;
 }
 
 .weather-sub-stats {
@@ -1742,6 +1814,9 @@ input:-webkit-autofill:focus {
     .weather-detail-layout {
         grid-template-columns: 1fr;
     }
+    .weather-side-column {
+        gap: 1.25rem;
+    }
     .todo-layout {
         grid-template-columns: 1fr;
     }
@@ -1753,6 +1828,9 @@ input:-webkit-autofill:focus {
     }
     .transactions-list-card {
         grid-column: span 1;
+    }
+    .hourly-forecast-item {
+        grid-template-columns: 0.75fr 1.5fr 0.65fr 0.9fr;
     }
 }
 
@@ -1772,6 +1850,18 @@ input:-webkit-autofill:focus {
 
     .main-header h1 {
         font-size: 1.5rem;
+    }
+
+    .hourly-forecast-item {
+        grid-template-columns: 1fr 1fr;
+        row-gap: 0.35rem;
+    }
+
+    .hourly-condition,
+    .hourly-temp,
+    .hourly-rain-prob {
+        justify-self: start;
+        text-align: left;
     }
 
     /* Show Bottom Navigation Bar */

@@ -1,14 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
     Sun, CloudSun, Cloud, CloudFog, CloudDrizzle, 
     CloudRain, CloudLightning, Snowflake, Thermometer, 
     Droplets, Wind, RefreshCw 
 } from 'lucide-react';
 
+const locations = {
+    pongnamron: {
+        name: 'ตำบลโป่งน้ำร้อน',
+        district: 'อำเภอโป่งน้ำร้อน, จันทบุรี',
+        lat: 12.9167,
+        lon: 102.2667
+    },
+    saton: {
+        name: 'ตำบลสะตอน',
+        district: 'อำเภอสอยดาว, จันทบุรี',
+        lat: 13.1300,
+        lon: 102.2600
+    }
+} as const;
+
 interface WeatherInfo {
     current: {
+        time: string;
         temperature_2m: number;
         relative_humidity_2m: number;
         apparent_temperature: number;
@@ -16,6 +32,12 @@ interface WeatherInfo {
         weather_code: number;
         cloud_cover: number;
         wind_speed_10m: number;
+    };
+    hourly: {
+        time: string[];
+        temperature_2m: number[];
+        weather_code: number[];
+        precipitation_probability: number[];
     };
     daily: {
         time: string[];
@@ -26,22 +48,14 @@ interface WeatherInfo {
     };
 }
 
-export default function Weather() {
-    const locations = {
-        pongnamron: {
-            name: 'ตำบลโป่งน้ำร้อน',
-            district: 'อำเภอโป่งน้ำร้อน, จันทบุรี',
-            lat: 12.9167,
-            lon: 102.2667
-        },
-        saton: {
-            name: 'ตำบลสะตอน',
-            district: 'อำเภอสอยดาว, จันทบุรี',
-            lat: 13.1300,
-            lon: 102.2600
-        }
-    };
+interface WeatherCacheEntry {
+    timestamp: number;
+    data: WeatherInfo;
+}
 
+type WeatherCache = Record<string, WeatherCacheEntry>;
+
+export default function Weather() {
     const [activeLoc, setActiveLoc] = useState<'pongnamron' | 'saton'>('pongnamron');
     const [weatherData, setWeatherData] = useState<WeatherInfo | null>(null);
     const [updateTime, setUpdateTime] = useState<string>('--:--');
@@ -86,7 +100,38 @@ export default function Weather() {
         }
     };
 
-    const fetchWeather = async (locKey: 'pongnamron' | 'saton', force = false) => {
+    const getTimeLabel = (timeStr: string) => {
+        const timePart = timeStr.split('T')[1] || timeStr;
+        return timePart.slice(0, 5);
+    };
+
+    const getHourlyForecast = (data: WeatherInfo) => {
+        const currentTime = data.current.time || data.hourly.time[0];
+        const dayPrefix = currentTime?.slice(0, 10) || '';
+        const startIndex = data.hourly.time.findIndex((time) => time === currentTime);
+
+        return data.hourly.time
+            .map((time, index) => ({
+                time,
+                temperature: Math.round(data.hourly.temperature_2m[index]),
+                precipitationProbability: data.hourly.precipitation_probability[index],
+                code: data.hourly.weather_code[index]
+            }))
+            .filter((item, index) => {
+                if (dayPrefix && !item.time.startsWith(dayPrefix)) {
+                    return false;
+                }
+
+                if (startIndex >= 0) {
+                    return index >= startIndex;
+                }
+
+                return true;
+            })
+            .slice(0, 12);
+    };
+
+    const fetchWeather = useCallback(async (locKey: 'pongnamron' | 'saton', force = false) => {
         setIsLoading(true);
         const loc = locations[locKey];
         const cacheKey = `weather_${locKey}`;
@@ -95,11 +140,12 @@ export default function Weather() {
 
         // Check LocalStorage cache
         const cacheStr = localStorage.getItem('weather_cache');
-        let cacheObj: any = {};
+        let cacheObj: WeatherCache = {};
         if (cacheStr) {
             try {
-                cacheObj = JSON.parse(cacheStr);
-            } catch (e) {
+                const parsedCache = JSON.parse(cacheStr) as Partial<WeatherCache>;
+                cacheObj = parsedCache as WeatherCache;
+            } catch {
                 cacheObj = {};
             }
         }
@@ -112,7 +158,7 @@ export default function Weather() {
             return;
         }
 
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Bangkok`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Bangkok`;
         
         try {
             const response = await fetch(url);
@@ -140,15 +186,21 @@ export default function Weather() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, []);
 
     // Load initial weather
     useEffect(() => {
-        fetchWeather(activeLoc);
-    }, [activeLoc]);
+        const timer = window.setTimeout(() => {
+            void fetchWeather(activeLoc);
+        }, 0);
+
+        return () => window.clearTimeout(timer);
+    }, [activeLoc, fetchWeather]);
 
     const activeInfo = locations[activeLoc];
     const currentMeta = weatherData ? getWeatherMeta(weatherData.current.weather_code) : { text: 'กำลังโหลด...', icon: 'sun' };
+    const hourlyForecast = weatherData ? getHourlyForecast(weatherData) : [];
+    const maxHourlyRainChance = hourlyForecast.length > 0 ? Math.max(...hourlyForecast.map((item) => item.precipitationProbability)) : 0;
 
     const getDayName = (dateStr: string, index: number) => {
         if (index === 0) return 'วันนี้';
@@ -196,6 +248,14 @@ export default function Weather() {
                         </div>
                         <div className="weather-main-time" style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             {updateTime}
+                        </div>
+                        <div className="weather-highlight-row">
+                            <span className="weather-highlight-pill">
+                                โอกาสฝนสูงสุดวันนี้ {maxHourlyRainChance}%
+                            </span>
+                            <span className="weather-highlight-pill muted">
+                                รายชั่วโมง {hourlyForecast.length} ช่วงเวลา
+                            </span>
                         </div>
                     </div>
 
@@ -247,41 +307,72 @@ export default function Weather() {
                     )}
                 </div>
 
-                {/* Forecast Card */}
-                <div className="card forecast-card">
-                    <h3 className="section-title">พยากรณ์อากาศล่วงหน้า 7 วัน</h3>
-                    {weatherData ? (
-                        <div className="forecast-list">
-                            {weatherData.daily.time.map((time, idx) => {
-                                const code = weatherData.daily.weather_code[idx];
-                                const meta = getWeatherMeta(code);
-                                const minTemp = Math.round(weatherData.daily.temperature_2m_min[idx]);
-                                const maxTemp = Math.round(weatherData.daily.temperature_2m_max[idx]);
-                                const rainProb = weatherData.daily.precipitation_probability_max[idx];
+                <div className="weather-side-column">
+                    <div className="card forecast-card hourly-forecast-card">
+                        <h3 className="section-title">พยากรณ์รายชั่วโมงของวันนี้</h3>
+                        {weatherData ? (
+                            <div className="hourly-forecast-list">
+                                {hourlyForecast.map((item) => {
+                                    const meta = getWeatherMeta(item.code);
 
-                                return (
-                                    <div key={idx} className="forecast-item">
-                                        <span className="day">{getDayName(time, idx)}</span>
-                                        <span className="rain-prob" title="โอกาสเกิดฝน">
-                                            <CloudRain size={14} style={{ display: 'inline', marginRight: '2px', verticalAlign: 'middle' }} />
-                                            {rainProb}%
-                                        </span>
-                                        <span style={{ justifySelf: 'center' }}>
-                                            {renderWeatherIcon(meta.icon, "forecast-icon text-cyan")}
-                                        </span>
-                                        <span className="temp-range">
-                                            <span className="temp-min">{minTemp}°</span>
-                                            <span className="temp-max">{maxTemp}°</span>
-                                        </span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        <div className="empty-state-text">
-                            กำลังโหลดพยากรณ์รายวัน...
-                        </div>
-                    )}
+                                    return (
+                                        <div key={item.time} className="hourly-forecast-item">
+                                            <span className="hourly-time">{getTimeLabel(item.time)}</span>
+                                            <span className="hourly-condition">
+                                                {renderWeatherIcon(meta.icon, 'hourly-icon')}
+                                                <span>{meta.text}</span>
+                                            </span>
+                                            <span className="hourly-temp">{item.temperature}°</span>
+                                            <span className="rain-prob hourly-rain-prob" title="โอกาสเกิดฝน">
+                                                <CloudRain size={14} />
+                                                {item.precipitationProbability}%
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="empty-state-text">
+                                กำลังโหลดพยากรณ์รายชั่วโมง...
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="card forecast-card">
+                        <h3 className="section-title">พยากรณ์อากาศล่วงหน้า 7 วัน</h3>
+                        {weatherData ? (
+                            <div className="forecast-list">
+                                {weatherData.daily.time.map((time, idx) => {
+                                    const code = weatherData.daily.weather_code[idx];
+                                    const meta = getWeatherMeta(code);
+                                    const minTemp = Math.round(weatherData.daily.temperature_2m_min[idx]);
+                                    const maxTemp = Math.round(weatherData.daily.temperature_2m_max[idx]);
+                                    const rainProb = weatherData.daily.precipitation_probability_max[idx];
+
+                                    return (
+                                        <div key={idx} className="forecast-item">
+                                            <span className="day">{getDayName(time, idx)}</span>
+                                            <span className="rain-prob" title="โอกาสเกิดฝน">
+                                                <CloudRain size={14} style={{ display: 'inline', marginRight: '2px', verticalAlign: 'middle' }} />
+                                                {rainProb}%
+                                            </span>
+                                            <span style={{ justifySelf: 'center' }}>
+                                                {renderWeatherIcon(meta.icon, "forecast-icon text-cyan")}
+                                            </span>
+                                            <span className="temp-range">
+                                                <span className="temp-min">{minTemp}°</span>
+                                                <span className="temp-max">{maxTemp}°</span>
+                                            </span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="empty-state-text">
+                                กำลังโหลดพยากรณ์รายวัน...
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>
