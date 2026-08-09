@@ -1,8 +1,18 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { CloudRain, CheckSquare, Calendar, Wallet, TrendingUp, TrendingDown, Sun } from 'lucide-react';
+import { CloudRain, CheckSquare, Calendar, Wallet, TrendingUp, TrendingDown, Sun, CloudSun, Cloud, CloudFog, CloudDrizzle, CloudLightning, Snowflake } from 'lucide-react';
 import { User } from '../providers';
+import { getTodos } from '@/app/actions/todo-actions';
+import { getCalendarEvents } from '@/app/actions/calendar-actions';
+import { getExpenses } from '@/app/actions/tracker-actions';
+
+type CalendarEventSummary = {
+    id: string;
+    title: string;
+    time: string;
+    tag: string | null;
+};
 
 interface OverviewProps {
     user: User | null;
@@ -18,82 +28,134 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
     const [todoPercent, setTodoPercent] = useState<number>(0);
     const [todoList, setTodoList] = useState<string[]>([]);
 
-    const [todayEvents, setTodayEvents] = useState<any[]>([]);
+    const [todayEvents, setTodayEvents] = useState<CalendarEventSummary[]>([]);
 
     const [balanceText, setBalanceText] = useState<string>('฿0.00');
     const [incomeText, setIncomeText] = useState<string>('฿0.00');
     const [expenseText, setExpenseText] = useState<string>('฿0.00');
 
+    const getWeatherMeta = (code: number) => {
+        const metaMap: Record<number, { text: string; icon: string }> = {
+            0: { text: 'ท้องฟ้าโปร่ง', icon: 'sun' },
+            1: { text: 'ท้องฟ้าโปร่งเป็นส่วนใหญ่', icon: 'cloud-sun' },
+            2: { text: 'มีเมฆบางส่วน', icon: 'cloud-sun' },
+            3: { text: 'ท้องฟ้าครึ้มมีเมฆหนา', icon: 'cloud' },
+            45: { text: 'มีหมอกจัด', icon: 'cloud-fog' },
+            48: { text: 'มีหมอกน้ำค้างแข็ง', icon: 'cloud-fog' },
+            51: { text: 'ฝนตกปรอยๆ', icon: 'cloud-drizzle' },
+            53: { text: 'ฝนตกปรอยๆ ปานกลาง', icon: 'cloud-drizzle' },
+            55: { text: 'ฝนตกปรอยๆ หนาแน่น', icon: 'cloud-drizzle' },
+            61: { text: 'ฝนตกเล็กน้อย', icon: 'cloud-rain' },
+            63: { text: 'ฝนตกปานกลาง', icon: 'cloud-rain' },
+            65: { text: 'ฝนตกหนัก', icon: 'cloud-rain' },
+            80: { text: 'ฝนไล่ช้างตก', icon: 'cloud-rain' },
+            81: { text: 'ฝนไล่ช้างตกปานกลาง', icon: 'cloud-rain' },
+            82: { text: 'ฝนไล่ช้างตกหนัก', icon: 'cloud-lightning' },
+            95: { text: 'พายุฝนฟ้าคะนอง', icon: 'cloud-lightning' },
+            96: { text: 'พายุฝนฟ้าคะนองมีลูกเห็บตกเล็กน้อย', icon: 'cloud-lightning' },
+            99: { text: 'พายุฝนฟ้าคะนองมีลูกเห็บตกหนัก', icon: 'cloud-lightning' }
+        };
+
+        return metaMap[code] || { text: 'สภาพอากาศทั่วไป', icon: 'cloud-sun' };
+    };
+
+    const renderWeatherIcon = (iconName: string) => {
+        switch (iconName) {
+            case 'sun': return <Sun className="weather-giant-icon animate-float" />;
+            case 'cloud-sun': return <CloudSun className="weather-giant-icon animate-float" />;
+            case 'cloud': return <Cloud className="weather-giant-icon animate-float" />;
+            case 'cloud-fog': return <CloudFog className="weather-giant-icon animate-float" />;
+            case 'cloud-drizzle': return <CloudDrizzle className="weather-giant-icon animate-float" />;
+            case 'cloud-rain': return <CloudRain className="weather-giant-icon animate-float" />;
+            case 'cloud-lightning': return <CloudLightning className="weather-giant-icon animate-float" />;
+            case 'snowflake': return <Snowflake className="weather-giant-icon animate-float" />;
+            default: return <CloudSun className="weather-giant-icon animate-float" />;
+        }
+    };
+
     // Load states on mount
     useEffect(() => {
-        // 1. Weather
-        const cached = localStorage.getItem('weather_cache');
-        if (cached) {
+        const loadOverview = async () => {
             try {
-                const parsed = JSON.parse(cached);
-                const pongCache = parsed['weather_pongnamron'];
-                if (pongCache) {
-                    const temp = Math.round(pongCache.data.current.temperature_2m);
+                const weatherResponse = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.9167&longitude=102.2667&current=temperature_2m,weather_code&timezone=Asia/Bangkok', { cache: 'no-store' });
+                if (weatherResponse.ok) {
+                    const weatherData = await weatherResponse.json();
+                    const temp = Math.round(weatherData.current.temperature_2m);
+                    const weatherMeta = getWeatherMeta(weatherData.current.weather_code);
                     setWeatherTemp(`${temp}°C`);
-                    
-                    const code = pongCache.data.current.weather_code;
-                    const metaMap: Record<number, { text: string; icon: string }> = {
-                        0: { text: 'ท้องฟ้าโปร่ง', icon: 'sun' },
-                        1: { text: 'ท้องฟ้าโปร่งเป็นส่วนใหญ่', icon: 'cloud-sun' },
-                        2: { text: 'มีเมฆบางส่วน', icon: 'cloud-sun' },
-                        3: { text: 'ท้องฟ้าครึ้มมีเมฆหนา', icon: 'cloud' },
-                        51: { text: 'ฝนตกปรอยๆ', icon: 'cloud-drizzle' },
-                        61: { text: 'ฝนตกเบาบาง', icon: 'cloud-rain' },
-                        63: { text: 'ฝนตกปานกลาง', icon: 'cloud-rain' },
-                        65: { text: 'ฝนตกหนัก', icon: 'cloud-rain' },
-                        80: { text: 'ฝนไล่ช้างตก', icon: 'cloud-rain' },
-                        95: { text: 'พายุฝนฟ้าคะนอง', icon: 'cloud-lightning' }
-                    };
-                    const weatherMeta = metaMap[code] || { text: 'สภาพอากาศทั่วไป', icon: 'cloud-sun' };
                     setWeatherDesc(weatherMeta.text);
                     setWeatherIcon(weatherMeta.icon);
+                } else {
+                    const cached = localStorage.getItem('weather_cache');
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        const pongCache = parsed['weather_pongnamron'];
+                        if (pongCache) {
+                            const temp = Math.round(pongCache.data.current.temperature_2m);
+                            const weatherMeta = getWeatherMeta(pongCache.data.current.weather_code);
+                            setWeatherTemp(`${temp}°C`);
+                            setWeatherDesc(weatherMeta.text);
+                            setWeatherIcon(weatherMeta.icon);
+                        }
+                    }
                 }
-            } catch (e) {}
-        }
+            } catch {
+                const cached = localStorage.getItem('weather_cache');
+                if (cached) {
+                    try {
+                        const parsed = JSON.parse(cached);
+                        const pongCache = parsed['weather_pongnamron'];
+                        if (pongCache) {
+                            const temp = Math.round(pongCache.data.current.temperature_2m);
+                            const weatherMeta = getWeatherMeta(pongCache.data.current.weather_code);
+                            setWeatherTemp(`${temp}°C`);
+                            setWeatherDesc(weatherMeta.text);
+                            setWeatherIcon(weatherMeta.icon);
+                        }
+                    } catch {
+                        // Keep defaults if both live fetch and cache fail.
+                    }
+                }
+            }
 
-        // 2. To-Do
-        const todosStr = localStorage.getItem('todos');
-        if (todosStr) {
-            try {
-                const todos = JSON.parse(todosStr);
-                const active = todos.filter((t: any) => !t.completed);
-                const total = todos.length;
+            const [todosResult, eventsResult, expensesResult] = await Promise.all([
+                getTodos(),
+                getCalendarEvents(),
+                getExpenses(),
+            ]);
+
+            if (!todosResult.error && todosResult.data) {
+                const active = todosResult.data.filter((t) => !t.completed);
+                const total = todosResult.data.length;
                 const completed = total - active.length;
                 const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
                 setTodoCount(`${completed}/${total} รายการ`);
                 setTodoPercent(percent);
-                setTodoList(active.slice(0, 3).map((t: any) => t.title));
-            } catch (e) {}
-        }
+                setTodoList(active.slice(0, 3).map((t) => t.title));
+            }
 
-        // 3. Calendar
-        const eventsStr = localStorage.getItem('calendar_events');
-        if (eventsStr) {
-            try {
-                const events = JSON.parse(eventsStr);
+            if (!eventsResult.error && eventsResult.data) {
                 const todayStr = new Date().toISOString().split('T')[0];
-                const list = events[todayStr] || [];
-                list.sort((a: any, b: any) => a.time.localeCompare(b.time));
-                setTodayEvents(list.slice(0, 2));
-            } catch (e) {}
-        }
+                const list = eventsResult.data
+                    .filter((event) => event.start_date.split('T')[0] === todayStr)
+                    .map((event) => ({
+                        id: event.id,
+                        title: event.title,
+                        time: event.start_date.includes('T') ? event.start_date.split('T')[1].slice(0, 5) : 'ตลอดวัน',
+                        tag: event.color,
+                    }))
+                    .sort((a, b) => a.time.localeCompare(b.time));
 
-        // 4. Finance
-        const txStr = localStorage.getItem('transactions');
-        if (txStr) {
-            try {
-                const txs = JSON.parse(txStr);
+                setTodayEvents(list.slice(0, 2));
+            }
+
+            if (!expensesResult.error && expensesResult.data) {
                 let inc = 0;
                 let exp = 0;
-                txs.forEach((t: any) => {
-                    if (t.type === 'income') inc += t.amount;
-                    else exp += t.amount;
+                expensesResult.data.forEach((t) => {
+                    if (t.type === 'income') inc += Number(t.amount);
+                    else exp += Number(t.amount);
                 });
                 const bal = inc - exp;
 
@@ -101,8 +163,10 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                 setBalanceText(formatShort(bal));
                 setIncomeText(formatShort(inc));
                 setExpenseText(formatShort(exp));
-            } catch (e) {}
-        }
+            }
+        };
+
+        void loadOverview();
     }, []);
 
     // Helper to get matching accent border color for event tag
@@ -118,17 +182,17 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             {/* Quick Weather Widget */}
             <div className="card weather-quick-card ripple" onClick={() => setActiveTab('weather')}>
                 <div className="card-header">
-                    <span className="card-tag">อากาศวันนี้</span>
+                    <span className="card-tag">อากาศวันนี้ {user?.name ? `· ${user.name}` : ''}</span>
                     <CloudRain className="card-icon-header text-cyan" />
                 </div>
                 <div className="weather-quick-body">
                     <div className="weather-quick-info">
                         <h3>{weatherTemp}</h3>
                         <p>{weatherDesc}</p>
-                        <span className="location-sub">ตำบลโป่งน้ำร้อน</span>
+                        <span className="location-sub">ตำบลโป่งน้ำร้อน · ข้อมูลสดจาก Open-Meteo</span>
                     </div>
                     <div className="weather-quick-graphic">
-                        <Sun className="weather-giant-icon animate-float" />
+                        {renderWeatherIcon(weatherIcon)}
                     </div>
                 </div>
             </div>
