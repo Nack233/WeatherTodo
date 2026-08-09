@@ -170,7 +170,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
     }, []);
 
     // Helper to get matching accent border color for event tag
-    const getEventBorderColor = (tag: string) => {
+    const getEventBorderColor = (tag: string | null) => {
         if (tag === 'tag-red') return 'var(--accent-red)';
         if (tag === 'tag-green') return 'var(--accent-green)';
         if (tag === 'tag-yellow') return 'var(--accent-yellow)';
