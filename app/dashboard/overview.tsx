@@ -143,24 +143,26 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     } catch {}
                 }
 
-                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.9167&longitude=102.2667&current=temperature_2m,weather_code&timezone=Asia/Bangkok');
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.9167&longitude=102.2667&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Bangkok');
                 if (response.ok) {
                     const weatherData = await response.json();
-                    const temp = Math.round(weatherData.current.temperature_2m);
-                    const weatherMeta = getWeatherMeta(weatherData.current.weather_code);
-                    setWeatherTemp(`${temp}°C`);
-                    setWeatherDesc(weatherMeta.text);
-                    setWeatherIcon(weatherMeta.icon);
+                    if (weatherData?.current) {
+                        const temp = Math.round(weatherData.current.temperature_2m);
+                        const weatherMeta = getWeatherMeta(weatherData.current.weather_code);
+                        setWeatherTemp(`${temp}°C`);
+                        setWeatherDesc(weatherMeta.text);
+                        setWeatherIcon(weatherMeta.icon);
 
-                    try {
-                        const newCache = {
-                            weather_pongnamron: {
-                                timestamp: Date.now(),
-                                data: weatherData
-                            }
-                        };
-                        localStorage.setItem('weather_cache', JSON.stringify(newCache));
-                    } catch {}
+                        try {
+                            const newCache = {
+                                weather_pongnamron: {
+                                    timestamp: Date.now(),
+                                    data: weatherData
+                                }
+                            };
+                            localStorage.setItem('weather_cache', JSON.stringify(newCache));
+                        } catch {}
+                    }
                 }
             } catch {
                 // Graceful fallback to existing cache/defaults if offline

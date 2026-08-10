@@ -100,22 +100,37 @@ export default function Weather() {
         }
     };
 
+    const isValidWeatherCache = (data: unknown): data is WeatherInfo => {
+        if (!data || typeof data !== 'object') return false;
+        const w = data as Partial<WeatherInfo>;
+        return Boolean(
+            w.current &&
+            typeof w.current.temperature_2m === 'number' &&
+            w.hourly && Array.isArray(w.hourly.time) && w.hourly.time.length > 0 &&
+            w.daily && Array.isArray(w.daily.time) && w.daily.time.length > 0
+        );
+    };
+
     const getTimeLabel = (timeStr: string) => {
+        if (!timeStr) return '--:--';
         const timePart = timeStr.split('T')[1] || timeStr;
         return timePart.slice(0, 5);
     };
 
     const getHourlyForecast = (data: WeatherInfo) => {
-        const currentTime = data.current.time || data.hourly.time[0];
+        if (!data?.hourly?.time || !Array.isArray(data.hourly.time)) {
+            return [];
+        }
+        const currentTime = data.current?.time || data.hourly.time[0] || '';
         const dayPrefix = currentTime?.slice(0, 10) || '';
         const startIndex = data.hourly.time.findIndex((time) => time === currentTime);
 
         return data.hourly.time
             .map((time, index) => ({
                 time,
-                temperature: Math.round(data.hourly.temperature_2m[index]),
-                precipitationProbability: data.hourly.precipitation_probability[index],
-                code: data.hourly.weather_code[index]
+                temperature: Math.round(data.hourly.temperature_2m?.[index] ?? 0),
+                precipitationProbability: data.hourly.precipitation_probability?.[index] ?? 0,
+                code: data.hourly.weather_code?.[index] ?? 0
             }))
             .filter((item, index) => {
                 if (dayPrefix && !item.time.startsWith(dayPrefix)) {
@@ -150,9 +165,10 @@ export default function Weather() {
             }
         }
 
-        if (!force && cacheObj[cacheKey] && (now - cacheObj[cacheKey].timestamp < cacheAgeLimit)) {
-            setWeatherData(cacheObj[cacheKey].data);
-            const timeObj = new Date(cacheObj[cacheKey].timestamp);
+        const cachedEntry = cacheObj[cacheKey];
+        if (!force && cachedEntry && isValidWeatherCache(cachedEntry.data) && (now - cachedEntry.timestamp < cacheAgeLimit)) {
+            setWeatherData(cachedEntry.data);
+            const timeObj = new Date(cachedEntry.timestamp);
             setUpdateTime(`อัปเดตล่าสุด: ${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`);
             setIsLoading(false);
             return;
@@ -165,22 +181,26 @@ export default function Weather() {
             if (!response.ok) throw new Error('API fetch failed');
             const data = await response.json();
             
-            // Update cache
-            cacheObj[cacheKey] = {
-                timestamp: now,
-                data: data
-            };
-            localStorage.setItem('weather_cache', JSON.stringify(cacheObj));
-            
-            setWeatherData(data);
-            const timeObj = new Date(now);
-            setUpdateTime(`อัปเดตล่าสุด: ${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`);
+            if (isValidWeatherCache(data)) {
+                // Update cache
+                cacheObj[cacheKey] = {
+                    timestamp: now,
+                    data: data
+                };
+                localStorage.setItem('weather_cache', JSON.stringify(cacheObj));
+                
+                setWeatherData(data);
+                const timeObj = new Date(now);
+                setUpdateTime(`อัปเดตล่าสุด: ${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`);
+            } else {
+                throw new Error('Invalid weather data structure received');
+            }
         } catch (error) {
             console.error('Error fetching weather:', error);
-            // Fallback to old cache if available
-            if (cacheObj[cacheKey]) {
-                setWeatherData(cacheObj[cacheKey].data);
-                const timeObj = new Date(cacheObj[cacheKey].timestamp);
+            // Fallback to old cache if valid
+            if (cachedEntry && isValidWeatherCache(cachedEntry.data)) {
+                setWeatherData(cachedEntry.data);
+                const timeObj = new Date(cachedEntry.timestamp);
                 setUpdateTime(`แคชเก่า (${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.)`);
             }
         } finally {
