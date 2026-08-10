@@ -2165,3 +2165,55 @@ input:-webkit-autofill:focus {
     border-left: 3px solid var(--accent-red);
 }
 
+/* ==========================================
+   SKELETON LOADING ANIMATIONS
+   ========================================== */
+@keyframes shimmer {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.skeleton-box {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.03) 25%,
+        rgba(255, 255, 255, 0.12) 37%,
+        rgba(255, 255, 255, 0.03) 63%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: 6px;
+}
+
+[data-theme='light'] .skeleton-box {
+    background: linear-gradient(
+        90deg,
+        rgba(0, 0, 0, 0.05) 25%,
+        rgba(0, 0, 0, 0.12) 37%,
+        rgba(0, 0, 0, 0.05) 63%
+    );
+    background-size: 200% 100%;
+}
+
+.skeleton-text {
+    height: 0.9rem;
+    width: 100%;
+    border-radius: 4px;
+}
+
+.skeleton-title {
+    height: 1.8rem;
+    width: 50%;
+    border-radius: 6px;
+}
+
+.skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+

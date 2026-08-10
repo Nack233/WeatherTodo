@@ -53,6 +53,11 @@ function formatEventDateDisplay(startDateStr: string): string {
 }
 
 export default function Overview({ user, setActiveTab }: OverviewProps) {
+    const [isWeatherLoading, setIsWeatherLoading] = useState<boolean>(true);
+    const [isTodoLoading, setIsTodoLoading] = useState<boolean>(true);
+    const [isEventsLoading, setIsEventsLoading] = useState<boolean>(true);
+    const [isExpensesLoading, setIsExpensesLoading] = useState<boolean>(true);
+
     const [weatherTemp, setWeatherTemp] = useState<string>('--°C');
     const [weatherDesc, setWeatherDesc] = useState<string>('กำลังโหลดข้อมูล...');
     const [weatherIcon, setWeatherIcon] = useState<string>('sun');
@@ -121,6 +126,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                         setWeatherTemp(`${temp}°C`);
                         setWeatherDesc(weatherMeta.text);
                         setWeatherIcon(weatherMeta.icon);
+                        setIsWeatherLoading(false);
                     }
                 }
             } catch {
@@ -138,6 +144,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                         const parsed = JSON.parse(cached);
                         const pongCache = parsed['weather_pongnamron'];
                         if (pongCache?.timestamp && (Date.now() - pongCache.timestamp < 10 * 60 * 1000)) {
+                            setIsWeatherLoading(false);
                             return; // Cache is still fresh
                         }
                     } catch {}
@@ -166,6 +173,8 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                 }
             } catch {
                 // Graceful fallback to existing cache/defaults if offline
+            } finally {
+                setIsWeatherLoading(false);
             }
         };
 
@@ -187,6 +196,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                 setTodoPercent(percent);
                 setTodoList(active.slice(0, 3).map((t) => t.title));
             }
+            setIsTodoLoading(false);
 
             if (!eventsResult.error && eventsResult.data) {
                 const now = new Date();
@@ -220,6 +230,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                 const list = [...upcoming, ...past];
                 setTodayEvents(list.slice(0, 3));
             }
+            setIsEventsLoading(false);
 
             if (!expensesResult.error && expensesResult.data) {
                 let inc = 0;
@@ -235,6 +246,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                 setIncomeText(formatShort(inc));
                 setExpenseText(formatShort(exp));
             }
+            setIsExpensesLoading(false);
         };
 
         // Trigger tasks asynchronously and in parallel
@@ -259,16 +271,29 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     <span className="card-tag">อากาศวันนี้ {user?.name ? `· ${user.name}` : ''}</span>
                     <CloudRain className="card-icon-header text-cyan" />
                 </div>
-                <div className="weather-quick-body">
-                    <div className="weather-quick-info">
-                        <h3>{weatherTemp}</h3>
-                        <p>{weatherDesc}</p>
-                        <span className="location-sub">ตำบลโป่งน้ำร้อน · ข้อมูลสดจาก Open-Meteo</span>
+                {isWeatherLoading ? (
+                    <div className="weather-quick-body">
+                        <div className="weather-quick-info" style={{ width: '100%' }}>
+                            <div className="skeleton-box skeleton-title" style={{ width: '90px', marginBottom: '0.6rem' }} />
+                            <div className="skeleton-box skeleton-text" style={{ width: '130px', marginBottom: '0.4rem' }} />
+                            <div className="skeleton-box skeleton-text" style={{ width: '180px' }} />
+                        </div>
+                        <div className="weather-quick-graphic">
+                            <div className="skeleton-box skeleton-circle" />
+                        </div>
                     </div>
-                    <div className="weather-quick-graphic">
-                        {renderWeatherIcon(weatherIcon)}
+                ) : (
+                    <div className="weather-quick-body">
+                        <div className="weather-quick-info">
+                            <h3>{weatherTemp}</h3>
+                            <p>{weatherDesc}</p>
+                            <span className="location-sub">ตำบลโป่งน้ำร้อน · ข้อมูลสดจาก Open-Meteo</span>
+                        </div>
+                        <div className="weather-quick-graphic">
+                            {renderWeatherIcon(weatherIcon)}
+                        </div>
                     </div>
-                </div>
+                )}
             </div>
 
             {/* To-Do Summary Widget */}
@@ -277,26 +302,35 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     <span className="card-tag">งานค้างของคุณ</span>
                     <CheckSquare className="card-icon-header text-purple" />
                 </div>
-                <div className="todo-quick-body">
-                    <div className="todo-progress-container">
-                        <div className="todo-progress-text">
-                            <span>{todoCount}</span>
-                            <span>{todoPercent}%</span>
-                        </div>
-                        <div className="progress-bar">
-                            <div className="progress" style={{ width: `${todoPercent}%` }}></div>
-                        </div>
+                {isTodoLoading ? (
+                    <div className="todo-quick-body">
+                        <div className="skeleton-box skeleton-text" style={{ height: '1.2rem', marginBottom: '0.8rem' }} />
+                        <div className="skeleton-box skeleton-text" style={{ marginBottom: '0.45rem' }} />
+                        <div className="skeleton-box skeleton-text" style={{ marginBottom: '0.45rem', width: '85%' }} />
+                        <div className="skeleton-box skeleton-text" style={{ width: '65%' }} />
                     </div>
-                    <ul className="quick-list">
-                        {todoList.length === 0 ? (
-                            <li className="empty-state-text">ไม่มีงานที่กำลังดำเนินการ</li>
-                        ) : (
-                            todoList.map((t, idx) => (
-                                <li key={idx}>{t}</li>
-                            ))
-                        )}
-                    </ul>
-                </div>
+                ) : (
+                    <div className="todo-quick-body">
+                        <div className="todo-progress-container">
+                            <div className="todo-progress-text">
+                                <span>{todoCount}</span>
+                                <span>{todoPercent}%</span>
+                            </div>
+                            <div className="progress-bar">
+                                <div className="progress" style={{ width: `${todoPercent}%` }}></div>
+                            </div>
+                        </div>
+                        <ul className="quick-list">
+                            {todoList.length === 0 ? (
+                                <li className="empty-state-text">ไม่มีงานที่กำลังดำเนินการ</li>
+                            ) : (
+                                todoList.map((t, idx) => (
+                                    <li key={idx}>{t}</li>
+                                ))
+                            )}
+                        </ul>
+                    </div>
+                )}
             </div>
 
             {/* Calendar Summary Widget */}
@@ -305,24 +339,33 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     <span className="card-tag">กิจกรรมเร็วๆ นี้</span>
                     <Calendar className="card-icon-header text-green" />
                 </div>
-                <div className="calendar-quick-body">
-                    <div className="quick-event-today">
-                        {todayEvents.length === 0 ? (
-                            <div className="empty-state-text">ไม่มีกิจกรรมที่บันทึกไว้</div>
-                        ) : (
-                            todayEvents.map((ev, idx) => (
-                                <div 
-                                    key={ev.id || idx} 
-                                    className="quick-event-item" 
-                                    style={{ borderLeft: `3px solid ${getEventBorderColor(ev.tag)}` }}
-                                >
-                                    <span className="title">{ev.title}</span>
-                                    <span className="time">{ev.time}</span>
-                                </div>
-                            ))
-                        )}
+                {isEventsLoading ? (
+                    <div className="calendar-quick-body">
+                        <div className="quick-event-today">
+                            <div className="skeleton-box" style={{ height: '2.6rem', marginBottom: '0.6rem', borderRadius: '0 8px 8px 0' }} />
+                            <div className="skeleton-box" style={{ height: '2.6rem', borderRadius: '0 8px 8px 0' }} />
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="calendar-quick-body">
+                        <div className="quick-event-today">
+                            {todayEvents.length === 0 ? (
+                                <div className="empty-state-text">ไม่มีกิจกรรมที่บันทึกไว้</div>
+                            ) : (
+                                todayEvents.map((ev, idx) => (
+                                    <div 
+                                        key={ev.id || idx} 
+                                        className="quick-event-item" 
+                                        style={{ borderLeft: `3px solid ${getEventBorderColor(ev.tag)}` }}
+                                    >
+                                        <span className="title">{ev.title}</span>
+                                        <span className="time">{ev.time}</span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Finance Summary Widget */}
@@ -331,19 +374,29 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     <span className="card-tag">กระเป๋าเงินวันนี้</span>
                     <Wallet className="card-icon-header text-yellow" />
                 </div>
-                <div className="finance-quick-body">
-                    <div className="balance-amount">{balanceText}</div>
-                    <div className="finance-quick-row">
-                        <div className="finance-mini-stat income">
-                            <span className="label"><TrendingUp size={12} /> รายรับ</span>
-                            <span className="val">{incomeText}</span>
-                        </div>
-                        <div className="finance-mini-stat expense">
-                            <span className="label"><TrendingDown size={12} /> รายจ่าย</span>
-                            <span className="val">{expenseText}</span>
+                {isExpensesLoading ? (
+                    <div className="finance-quick-body">
+                        <div className="skeleton-box skeleton-title" style={{ width: '130px', height: '2.2rem', marginBottom: '1rem' }} />
+                        <div className="finance-quick-row">
+                            <div className="skeleton-box" style={{ height: '2.5rem', flex: 1 }} />
+                            <div className="skeleton-box" style={{ height: '2.5rem', flex: 1 }} />
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="finance-quick-body">
+                        <div className="balance-amount">{balanceText}</div>
+                        <div className="finance-quick-row">
+                            <div className="finance-mini-stat income">
+                                <span className="label"><TrendingUp size={12} /> รายรับ</span>
+                                <span className="val">{incomeText}</span>
+                            </div>
+                            <div className="finance-mini-stat expense">
+                                <span className="label"><TrendingDown size={12} /> รายจ่าย</span>
+                                <span className="val">{expenseText}</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
