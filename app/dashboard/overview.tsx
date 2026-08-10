@@ -106,51 +106,69 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
         }
     };
 
-    // Load states on mount
+    // Load states on mount with parallel fetching & instant cache hydration
     useEffect(() => {
-        const loadOverview = async () => {
+        // 1. Instant Cache Hydration for Weather (0ms UI render)
+        const loadCachedWeather = () => {
             try {
-                const weatherResponse = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.9167&longitude=102.2667&current=temperature_2m,weather_code&timezone=Asia/Bangkok', { cache: 'no-store' });
-                if (weatherResponse.ok) {
-                    const weatherData = await weatherResponse.json();
-                    const temp = Math.round(weatherData.current.temperature_2m);
-                    const weatherMeta = getWeatherMeta(weatherData.current.weather_code);
-                    setWeatherTemp(`${temp}°C`);
-                    setWeatherDesc(weatherMeta.text);
-                    setWeatherIcon(weatherMeta.icon);
-                } else {
-                    const cached = localStorage.getItem('weather_cache');
-                    if (cached) {
-                        const parsed = JSON.parse(cached);
-                        const pongCache = parsed['weather_pongnamron'];
-                        if (pongCache) {
-                            const temp = Math.round(pongCache.data.current.temperature_2m);
-                            const weatherMeta = getWeatherMeta(pongCache.data.current.weather_code);
-                            setWeatherTemp(`${temp}°C`);
-                            setWeatherDesc(weatherMeta.text);
-                            setWeatherIcon(weatherMeta.icon);
-                        }
+                const cached = localStorage.getItem('weather_cache');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    const pongCache = parsed['weather_pongnamron'];
+                    if (pongCache?.data?.current) {
+                        const temp = Math.round(pongCache.data.current.temperature_2m);
+                        const weatherMeta = getWeatherMeta(pongCache.data.current.weather_code);
+                        setWeatherTemp(`${temp}°C`);
+                        setWeatherDesc(weatherMeta.text);
+                        setWeatherIcon(weatherMeta.icon);
                     }
                 }
             } catch {
+                // Ignore cache read errors
+            }
+        };
+
+        // 2. Weather Fetch (Parallel & Non-blocking)
+        const fetchWeatherAsync = async () => {
+            try {
+                // Check if existing cache is fresh (less than 10 mins old)
                 const cached = localStorage.getItem('weather_cache');
                 if (cached) {
                     try {
                         const parsed = JSON.parse(cached);
                         const pongCache = parsed['weather_pongnamron'];
-                        if (pongCache) {
-                            const temp = Math.round(pongCache.data.current.temperature_2m);
-                            const weatherMeta = getWeatherMeta(pongCache.data.current.weather_code);
-                            setWeatherTemp(`${temp}°C`);
-                            setWeatherDesc(weatherMeta.text);
-                            setWeatherIcon(weatherMeta.icon);
+                        if (pongCache?.timestamp && (Date.now() - pongCache.timestamp < 10 * 60 * 1000)) {
+                            return; // Cache is still fresh
                         }
-                    } catch {
-                        // Keep defaults if both live fetch and cache fail.
-                    }
+                    } catch {}
                 }
-            }
 
+                const response = await fetch('https://api.open-meteo.com/v1/forecast?latitude=12.9167&longitude=102.2667&current=temperature_2m,weather_code&timezone=Asia/Bangkok');
+                if (response.ok) {
+                    const weatherData = await response.json();
+                    const temp = Math.round(weatherData.current.temperature_2m);
+                    const weatherMeta = getWeatherMeta(weatherData.current.weather_code);
+                    setWeatherTemp(`${temp}°C`);
+                    setWeatherDesc(weatherMeta.text);
+                    setWeatherIcon(weatherMeta.icon);
+
+                    try {
+                        const newCache = {
+                            weather_pongnamron: {
+                                timestamp: Date.now(),
+                                data: weatherData
+                            }
+                        };
+                        localStorage.setItem('weather_cache', JSON.stringify(newCache));
+                    } catch {}
+                }
+            } catch {
+                // Graceful fallback to existing cache/defaults if offline
+            }
+        };
+
+        // 3. Supabase Data Fetch (Parallel with Weather)
+        const loadSupabaseData = async () => {
             const [todosResult, eventsResult, expensesResult] = await Promise.all([
                 getTodos(),
                 getCalendarEvents(),
@@ -217,7 +235,10 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             }
         };
 
-        void loadOverview();
+        // Trigger tasks asynchronously and in parallel
+        loadCachedWeather();
+        void fetchWeatherAsync();
+        void loadSupabaseData();
     }, []);
 
     // Helper to get matching accent border color for event tag
