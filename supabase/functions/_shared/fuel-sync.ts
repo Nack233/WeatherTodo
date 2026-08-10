@@ -88,13 +88,25 @@ const FUEL_MAP: Record<(typeof BRAND_ORDER)[number], Array<{ fuelType: string; k
 };
 
 function parseEppoEffectiveDate(payload: EppoOilApiResponse) {
-    const candidateDates = [
-        payload.data.ptt.oil_ptt_date,
-        payload.data.bcp.oil_bcp_date,
-        payload.data.pt.oil_pt_date,
-    ].filter(Boolean);
+    const candidateDates: string[] = [];
 
-    return candidateDates[0] ?? new Date().toISOString().split('T')[0];
+    if (payload.data) {
+        for (const brandData of Object.values(payload.data)) {
+            if (!brandData) continue;
+            for (const [key, val] of Object.entries(brandData)) {
+                if (key.endsWith('_date') && typeof val === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(val.trim())) {
+                    candidateDates.push(val.trim());
+                }
+            }
+        }
+    }
+
+    if (candidateDates.length === 0) {
+        return new Date().toISOString().split('T')[0];
+    }
+
+    candidateDates.sort();
+    return candidateDates[candidateDates.length - 1];
 }
 
 function buildFuelRows(payload: EppoOilApiResponse): FuelPriceRow[] {
