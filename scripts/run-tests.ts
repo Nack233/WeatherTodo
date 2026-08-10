@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 
@@ -85,6 +86,18 @@ const registeredTabs = ['dashboard', 'weather', 'todo', 'calendar', 'tracker', '
 registeredTabs.forEach((tab) => {
     assert(dashboardPageContent.includes(`activeTab === '${tab}'`), `Tab '${tab}' registered in navigation`);
 });
+
+// --------------------------------------------------
+// Test 4: Next.js Production Build Check
+// --------------------------------------------------
+console.log('\n📌 Test Suite 4: Next.js Production Build Check');
+try {
+    execSync('npx next build', { stdio: 'inherit', cwd: process.cwd() });
+    assert(true, 'Next.js production build succeeded');
+} catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    assert(false, `Next.js production build failed: ${msg}`);
+}
 
 // --------------------------------------------------
 // Final Summary

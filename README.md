@@ -29,6 +29,26 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
+## Testing & Build Verification
+
+To run full system health checks and verify the production build for Vercel deployment:
+
+```bash
+npm test
+```
+
+The test script automatically validates:
+1. Dashboard pages & component file existence
+2. Weather cache integrity logic
+3. Dashboard navigation tab registration
+4. **Next.js Production Build (`npm run build`)**
+
+Or to test the production build directly:
+
+```bash
+npm run build
+```
+
 ## Deploy on Vercel
 
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
