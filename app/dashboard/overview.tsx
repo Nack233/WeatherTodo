@@ -6,6 +6,8 @@ import { User } from '../providers';
 import { getTodos } from '@/app/actions/todo-actions';
 import { getCalendarEvents } from '@/app/actions/calendar-actions';
 import { getExpenses } from '@/app/actions/tracker-actions';
+import { useToast } from '@/app/components/Toast';
+import AiBriefingCard from './ai-briefing-card';
 
 type CalendarEventSummary = {
     id: string;
@@ -62,8 +64,11 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
     const [weatherDesc, setWeatherDesc] = useState<string>('กำลังโหลดข้อมูล...');
     const [weatherIcon, setWeatherIcon] = useState<string>('sun');
 
+    const { showToast } = useToast();
     const [todoCount, setTodoCount] = useState<string>('0/0 รายการ');
     const [todoPercent, setTodoPercent] = useState<number>(0);
+    const [todoTotal, setTodoTotal] = useState<number>(0);
+    const [todoCompleted, setTodoCompleted] = useState<number>(0);
     const [todoList, setTodoList] = useState<string[]>([]);
 
     const [todayEvents, setTodayEvents] = useState<CalendarEventSummary[]>([]);
@@ -194,6 +199,8 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
 
                 setTodoCount(`${completed}/${total} รายการ`);
                 setTodoPercent(percent);
+                setTodoTotal(total);
+                setTodoCompleted(completed);
                 setTodoList(active.slice(0, 3).map((t) => t.title));
             }
             setIsTodoLoading(false);
@@ -264,7 +271,33 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
     };
 
     return (
-        <div className="dashboard-grid">
+        <div className="overview-container">
+            {/* AI Daily Briefing Hero Banner */}
+            <AiBriefingCard 
+                data={{
+                    userName: user?.name,
+                    weather: {
+                        temp: weatherTemp,
+                        desc: weatherDesc,
+                        icon: weatherIcon
+                    },
+                    todos: {
+                        total: todoTotal,
+                        completed: todoCompleted,
+                        percent: todoPercent,
+                        list: todoList
+                    },
+                    events: todayEvents.map((ev) => ({ title: ev.title, time: ev.time })),
+                    expenses: {
+                        balance: balanceText,
+                        income: incomeText,
+                        expense: expenseText
+                    }
+                }}
+                onShowToast={(msg, type) => showToast(msg, type === 'error' ? 'error' : 'success')}
+            />
+
+            <div className="dashboard-grid">
             {/* Quick Weather Widget */}
             <div className="card weather-quick-card ripple" onClick={() => setActiveTab('weather')}>
                 <div className="card-header">
@@ -398,6 +431,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     </div>
                 )}
             </div>
+        </div>
         </div>
     );
 }

@@ -34,7 +34,9 @@ const requiredFiles = [
     'app/dashboard/todo.tsx',
     'app/dashboard/calendar.tsx',
     'app/dashboard/tracker.tsx',
-    'app/dashboard/fuel-prices.tsx'
+    'app/dashboard/fuel-prices.tsx',
+    'app/dashboard/ai-briefing-card.tsx',
+    'utils/ai-briefing.ts'
 ];
 
 requiredFiles.forEach((relPath) => {
