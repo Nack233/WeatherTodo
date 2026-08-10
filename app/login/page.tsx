@@ -55,7 +55,7 @@ export default function LoginPage() {
                 <div className="auth-header">
                     <div className="auth-logo">
                         <LayoutDashboard />
-                        <span>Chanthaburi</span>
+                        <span>Personal Dashboard</span>
                     </div>
                     <p>ระบบแดชบอร์ดสภาพอากาศและเครื่องมือช่วยเหลือ</p>
                 </div>

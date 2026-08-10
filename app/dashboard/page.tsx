@@ -99,7 +99,7 @@ export default function DashboardPage() {
             <aside className="sidebar">
                 <div className="brand">
                     <LayoutDashboard className="brand-icon" />
-                    <span className="brand-name">Chanthaburi</span>
+                    <span className="brand-name">Personal Dashboard</span>
                 </div>
                 <nav className="nav-menu">
                     <button 

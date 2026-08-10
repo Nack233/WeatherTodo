@@ -19,6 +19,39 @@ interface OverviewProps {
     setActiveTab: (tab: string) => void;
 }
 
+function formatEventDateDisplay(startDateStr: string): string {
+    if (!startDateStr) return '';
+    const [datePart, timePart] = startDateStr.split('T');
+    const timeDisplay = timePart ? `${timePart.slice(0, 5)} น.` : '(ตลอดวัน)';
+
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+
+    if (datePart === todayStr) {
+        return `วันนี้ ${timeDisplay}`;
+    }
+    if (datePart === tomorrowStr) {
+        return `พรุ่งนี้ ${timeDisplay}`;
+    }
+
+    const eventDate = new Date(startDateStr.includes('T') ? startDateStr : `${startDateStr}T00:00:00`);
+    if (isNaN(eventDate.getTime())) {
+        return `${datePart} ${timeDisplay}`;
+    }
+
+    const thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    const day = eventDate.getDate();
+    const month = thaiMonthsShort[eventDate.getMonth()];
+    const isCurrentYear = eventDate.getFullYear() === now.getFullYear();
+    const yearDisplay = isCurrentYear ? '' : ` ${eventDate.getFullYear() + 543}`;
+
+    return `${day} ${month}${yearDisplay} ${timeDisplay}`;
+}
+
 export default function Overview({ user, setActiveTab }: OverviewProps) {
     const [weatherTemp, setWeatherTemp] = useState<string>('--°C');
     const [weatherDesc, setWeatherDesc] = useState<string>('กำลังโหลดข้อมูล...');
@@ -136,18 +169,36 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             }
 
             if (!eventsResult.error && eventsResult.data) {
-                const todayStr = new Date().toISOString().split('T')[0];
-                const list = eventsResult.data
-                    .filter((event) => event.start_date.split('T')[0] === todayStr)
-                    .map((event) => ({
+                const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
+                type TempSummary = CalendarEventSummary & { timestamp: number };
+                const upcoming: TempSummary[] = [];
+                const past: TempSummary[] = [];
+
+                eventsResult.data.forEach((event) => {
+                    const dateObj = new Date(event.start_date.includes('T') ? event.start_date : `${event.start_date}T00:00:00`);
+                    const timeMs = dateObj.getTime();
+                    const summary: TempSummary = {
                         id: event.id,
                         title: event.title,
-                        time: event.start_date.includes('T') ? event.start_date.split('T')[1].slice(0, 5) : 'ตลอดวัน',
+                        time: formatEventDateDisplay(event.start_date),
                         tag: event.color,
-                    }))
-                    .sort((a, b) => a.time.localeCompare(b.time));
+                        timestamp: timeMs,
+                    };
 
-                setTodayEvents(list.slice(0, 2));
+                    if (isNaN(timeMs) || timeMs >= todayStart) {
+                        upcoming.push(summary);
+                    } else {
+                        past.push(summary);
+                    }
+                });
+
+                upcoming.sort((a, b) => a.timestamp - b.timestamp);
+                past.sort((a, b) => b.timestamp - a.timestamp);
+
+                const list = [...upcoming, ...past];
+                setTodayEvents(list.slice(0, 3));
             }
 
             if (!expensesResult.error && expensesResult.data) {
@@ -228,22 +279,22 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             {/* Calendar Summary Widget */}
             <div className="card calendar-quick-card ripple" onClick={() => setActiveTab('calendar')}>
                 <div className="card-header">
-                    <span className="card-tag">กิจกรรมวันนี้</span>
+                    <span className="card-tag">กิจกรรมเร็วๆ นี้</span>
                     <Calendar className="card-icon-header text-green" />
                 </div>
                 <div className="calendar-quick-body">
                     <div className="quick-event-today">
                         {todayEvents.length === 0 ? (
-                            <div className="empty-state-text">วันนี้ไม่มีกิจกรรมที่บันทึกไว้</div>
+                            <div className="empty-state-text">ไม่มีกิจกรรมที่บันทึกไว้</div>
                         ) : (
                             todayEvents.map((ev, idx) => (
                                 <div 
-                                    key={idx} 
+                                    key={ev.id || idx} 
                                     className="quick-event-item" 
                                     style={{ borderLeft: `3px solid ${getEventBorderColor(ev.tag)}` }}
                                 >
                                     <span className="title">{ev.title}</span>
-                                    <span className="time">{ev.time} น.</span>
+                                    <span className="time">{ev.time}</span>
                                 </div>
                             ))
                         )}

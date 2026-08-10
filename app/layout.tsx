@@ -15,8 +15,8 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: "Chanthaburi Utility Dashboard",
-  description: "แดชบอร์ดสภาพอากาศและเครื่องมือช่วยเหลือระบบความคืบหน้าของจันทบุรี",
+  title: "Personal Dashboard",
+  description: "แดชบอร์ดสภาพอากาศและเครื่องมือช่วยเหลือส่วนบุคคล",
 };
 
 export default function RootLayout({

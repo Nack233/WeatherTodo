@@ -76,7 +76,7 @@ export default function RegisterPage() {
                 <div className="auth-header">
                     <div className="auth-logo">
                         <LayoutDashboard />
-                        <span>Chanthaburi</span>
+                        <span>Personal Dashboard</span>
                     </div>
                     <p>สมัครสมาชิกเพื่อเข้าใช้งานระบบแดชบอร์ด</p>
                 </div>
