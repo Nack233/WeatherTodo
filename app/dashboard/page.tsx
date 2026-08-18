@@ -3,14 +3,35 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useTheme } from '../providers';
+import dynamic from 'next/dynamic';
 
-// Sub-components
-import Overview from './overview';
-import Weather from './weather';
-import Todo from './todo';
-import Calendar from './calendar';
-import Tracker from './tracker';
-import FuelPrices from './fuel-prices';
+// Skeleton loading fallback for tab panels
+function TabSkeleton() {
+    return (
+        <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {[1, 2, 3].map((i) => (
+                <div
+                    key={i}
+                    style={{
+                        height: i === 1 ? '120px' : '80px',
+                        borderRadius: '16px',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-color)',
+                        animation: 'skeleton-shimmer 1.5s infinite linear',
+                    }}
+                />
+            ))}
+        </div>
+    );
+}
+
+// Sub-components — lazy loaded per tab to reduce initial JS bundle
+const Overview   = dynamic(() => import('./overview'),     { loading: () => <TabSkeleton /> });
+const Weather    = dynamic(() => import('./weather'),      { loading: () => <TabSkeleton /> });
+const Todo       = dynamic(() => import('./todo'),         { loading: () => <TabSkeleton /> });
+const Calendar   = dynamic(() => import('./calendar'),    { loading: () => <TabSkeleton /> });
+const Tracker    = dynamic(() => import('./tracker'),     { loading: () => <TabSkeleton /> });
+const FuelPrices = dynamic(() => import('./fuel-prices'), { loading: () => <TabSkeleton /> });
 
 // Icons
 import { 

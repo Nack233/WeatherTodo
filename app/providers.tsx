@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import type { AuthChangeEvent, Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { ToastProvider } from '@/app/components/Toast';
@@ -51,7 +51,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     // Initialize Auth Session and Theme on Mount
     useEffect(() => {
