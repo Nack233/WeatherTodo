@@ -6,22 +6,12 @@ import {
     CloudRain, CloudLightning, Snowflake, Thermometer, 
     Droplets, Wind, RefreshCw 
 } from 'lucide-react';
+import { LocationPickerModal, LocationChips } from './location-picker';
+import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
 
-const locations = {
-    pongnamron: {
-        name: 'ตำบลโป่งน้ำร้อน',
-        district: 'อำเภอโป่งน้ำร้อน, จันทบุรี',
-        lat: 12.9167,
-        lon: 102.2667
-    },
-    saton: {
-        name: 'ตำบลสะตอน',
-        district: 'อำเภอสอยดาว, จันทบุรี',
-        lat: 13.1300,
-        lon: 102.2600
-    }
-} as const;
-
+// ============================================================
+// Types
+// ============================================================
 interface WeatherInfo {
     current: {
         time: string;
@@ -55,11 +45,56 @@ interface WeatherCacheEntry {
 
 type WeatherCache = Record<string, WeatherCacheEntry>;
 
+// ============================================================
+// Helpers
+// ============================================================
+const STORAGE_KEY_LOCATIONS = 'weather_saved_locations';
+const STORAGE_KEY_ACTIVE = 'weather_active_location';
+
+function loadSavedLocations(): SavedLocation[] {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY_LOCATIONS);
+        if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+    } catch { /* ignore */ }
+    return DEFAULT_LOCATIONS;
+}
+
+function saveLocations(locations: SavedLocation[]) {
+    localStorage.setItem(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
+}
+
+function loadActiveId(locations: SavedLocation[]): string {
+    try {
+        const saved = localStorage.getItem(STORAGE_KEY_ACTIVE);
+        if (saved && locations.some((l) => l.id === saved)) return saved;
+    } catch { /* ignore */ }
+    return locations[0]?.id || '';
+}
+
+function cacheKeyFor(loc: SavedLocation): string {
+    return `weather_${loc.lat.toFixed(4)}_${loc.lon.toFixed(4)}`;
+}
+
+// ============================================================
+// Component
+// ============================================================
 export default function Weather() {
-    const [activeLoc, setActiveLoc] = useState<'pongnamron' | 'saton'>('pongnamron');
+    const [locations, setLocations] = useState<SavedLocation[]>([]);
+    const [activeId, setActiveId] = useState<string>('');
     const [weatherData, setWeatherData] = useState<WeatherInfo | null>(null);
     const [updateTime, setUpdateTime] = useState<string>('--:--');
     const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+
+    // Init from localStorage
+    useEffect(() => {
+        const locs = loadSavedLocations();
+        setLocations(locs);
+        setActiveId(loadActiveId(locs));
+    }, []);
 
     const weatherCodes: Record<number, { text: string; icon: string }> = {
         0: { text: 'ท้องฟ้าโปร่ง', icon: 'sun' },
@@ -68,6 +103,7 @@ export default function Weather() {
         3: { text: 'ท้องฟ้าครึ้มมีเมฆหนา', icon: 'cloud' },
         45: { text: 'มีหมอกจัด', icon: 'cloud-fog' },
         48: { text: 'มีหมอกน้ำค้างแข็ง', icon: 'cloud-fog' },
+        71: { text: 'ฝนตกปรอยๆ เล็กน้อย', icon: 'cloud-drizzle' },
         51: { text: 'ฝนตกปรอยๆ เล็กน้อย', icon: 'cloud-drizzle' },
         53: { text: 'ฝนตกปรอยๆ ปานกลาง', icon: 'cloud-drizzle' },
         55: { text: 'ฝนตกปรอยๆ หนาแน่น', icon: 'cloud-drizzle' },
@@ -146,10 +182,9 @@ export default function Weather() {
             .slice(0, 12);
     };
 
-    const fetchWeather = useCallback(async (locKey: 'pongnamron' | 'saton', force = false) => {
+    const fetchWeather = useCallback(async (loc: SavedLocation, force = false) => {
         setIsLoading(true);
-        const loc = locations[locKey];
-        const cacheKey = `weather_${locKey}`;
+        const cKey = cacheKeyFor(loc);
         const cacheAgeLimit = 15 * 60 * 1000; // 15 mins
         const now = Date.now();
 
@@ -165,7 +200,7 @@ export default function Weather() {
             }
         }
 
-        const cachedEntry = cacheObj[cacheKey];
+        const cachedEntry = cacheObj[cKey];
         if (!force && cachedEntry && isValidWeatherCache(cachedEntry.data) && (now - cachedEntry.timestamp < cacheAgeLimit)) {
             setWeatherData(cachedEntry.data);
             const timeObj = new Date(cachedEntry.timestamp);
@@ -183,7 +218,7 @@ export default function Weather() {
             
             if (isValidWeatherCache(data)) {
                 // Update cache
-                cacheObj[cacheKey] = {
+                cacheObj[cKey] = {
                     timestamp: now,
                     data: data
                 };
@@ -208,16 +243,49 @@ export default function Weather() {
         }
     }, []);
 
-    // Load initial weather
+    // Fetch weather when active location changes
     useEffect(() => {
+        if (!activeId || locations.length === 0) return;
+        const loc = locations.find((l) => l.id === activeId);
+        if (!loc) return;
+
+        localStorage.setItem(STORAGE_KEY_ACTIVE, activeId);
         const timer = window.setTimeout(() => {
-            void fetchWeather(activeLoc);
+            void fetchWeather(loc);
         }, 0);
 
         return () => window.clearTimeout(timer);
-    }, [activeLoc, fetchWeather]);
+    }, [activeId, locations, fetchWeather]);
 
-    const activeInfo = locations[activeLoc];
+    // Handlers
+    const handleAddLocation = (loc: SavedLocation) => {
+        const updated = [...locations, loc];
+        setLocations(updated);
+        saveLocations(updated);
+        setActiveId(loc.id);
+    };
+
+    const handleRemoveLocation = (id: string) => {
+        const updated = locations.filter((l) => l.id !== id);
+        if (updated.length === 0) {
+            // Don't allow removing all — reset to defaults
+            setLocations(DEFAULT_LOCATIONS);
+            saveLocations(DEFAULT_LOCATIONS);
+            setActiveId(DEFAULT_LOCATIONS[0].id);
+            return;
+        }
+        setLocations(updated);
+        saveLocations(updated);
+        if (activeId === id) {
+            setActiveId(updated[0].id);
+        }
+    };
+
+    const handleSelectLocation = (id: string) => {
+        setActiveId(id);
+    };
+
+    const activeLoc = locations.find((l) => l.id === activeId);
     const currentMeta = weatherData ? getWeatherMeta(weatherData.current.weather_code) : { text: 'กำลังโหลด...', icon: 'sun' };
     const hourlyForecast = weatherData ? getHourlyForecast(weatherData) : [];
     const maxHourlyRainChance = hourlyForecast.length > 0 ? Math.max(...hourlyForecast.map((item) => item.precipitationProbability)) : 0;
@@ -231,29 +299,27 @@ export default function Weather() {
         return dayNames[date.getDay()];
     };
 
+    // Build display name for active location
+    const displayName = activeLoc?.name || 'เลือกสถานที่';
+    const displayDistrict = [activeLoc?.district, activeLoc?.province].filter(Boolean).join(', ');
+
     return (
         <div>
-            <div className="weather-controls">
-                <button 
-                    className={`btn-toggle ${activeLoc === 'pongnamron' ? 'active' : ''}`}
-                    onClick={() => setActiveLoc('pongnamron')}
-                >
-                    ตำบลโป่งน้ำร้อน (อ.โป่งน้ำร้อน)
-                </button>
-                <button 
-                    className={`btn-toggle ${activeLoc === 'saton' ? 'active' : ''}`}
-                    onClick={() => setActiveLoc('saton')}
-                >
-                    ตำบลสะตอน (อ.สอยดาว)
-                </button>
-            </div>
+            {/* Location Chips Bar */}
+            <LocationChips
+                locations={locations}
+                activeId={activeId}
+                onSelect={handleSelectLocation}
+                onRemove={handleRemoveLocation}
+                onAddClick={() => setIsPickerOpen(true)}
+            />
 
             <div className="weather-detail-layout">
                 {/* Current Weather Card */}
                 <div className="card weather-main-card" style={{ position: 'relative' }}>
                     <button 
                         className="icon-btn" 
-                        onClick={() => fetchWeather(activeLoc, true)}
+                        onClick={() => activeLoc && fetchWeather(activeLoc, true)}
                         style={{ position: 'absolute', top: '1.5rem', right: '1.5rem' }}
                         title="รีเฟรชข้อมูลสภาพอากาศ"
                         disabled={isLoading}
@@ -263,8 +329,8 @@ export default function Weather() {
 
                     <div className="weather-main-header">
                         <div className="location-details">
-                            <h2>{activeInfo.name}</h2>
-                            <p>{activeInfo.district}</p>
+                            <h2>{displayName}</h2>
+                            <p>{displayDistrict}</p>
                         </div>
                         <div className="weather-main-time" style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                             {updateTime}
@@ -395,6 +461,14 @@ export default function Weather() {
                     </div>
                 </div>
             </div>
+
+            {/* Location Picker Modal */}
+            <LocationPickerModal
+                isOpen={isPickerOpen}
+                onClose={() => setIsPickerOpen(false)}
+                onAddLocation={handleAddLocation}
+                existingLocations={locations}
+            />
         </div>
     );
 }

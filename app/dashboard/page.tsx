@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth, useTheme } from '../providers';
+import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
 import dynamic from 'next/dynamic';
 
 // Skeleton loading fallback for tab panels
@@ -47,6 +48,31 @@ export default function DashboardPage() {
 
     const [activeTab, setActiveTab] = useState<string>('dashboard');
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
+    const [locationBadge, setLocationBadge] = useState<string>('ไทย');
+
+    // Dynamic location badge from localStorage
+    useEffect(() => {
+        const updateBadge = () => {
+            try {
+                const raw = localStorage.getItem('weather_saved_locations');
+                const activeId = localStorage.getItem('weather_active_location');
+                if (raw) {
+                    const locs: SavedLocation[] = JSON.parse(raw);
+                    if (locs.length > 0) {
+                        const active = locs.find((l) => l.id === activeId) || locs[0];
+                        setLocationBadge(active.province ? `${active.province}, ไทย` : 'ไทย');
+                        return;
+                    }
+                }
+            } catch { /* ignore */ }
+            setLocationBadge(`${DEFAULT_LOCATIONS[0].province}, ไทย`);
+        };
+        updateBadge();
+        // Listen for storage changes (from weather tab)
+        window.addEventListener('storage', updateBadge);
+        const interval = setInterval(updateBadge, 3000);
+        return () => { window.removeEventListener('storage', updateBadge); clearInterval(interval); };
+    }, []);
 
     // Protected Route Verification
     useEffect(() => {
@@ -169,7 +195,7 @@ export default function DashboardPage() {
                 <div className="sidebar-footer">
                     <div className="location-badge">
                         <MapPin />
-                        <span>จันทบุรี, ไทย</span>
+                        <span>{locationBadge}</span>
                     </div>
                     <button className="btn-logout" onClick={handleLogout}>
                         <LogOut size={16} />
