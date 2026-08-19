@@ -1,19 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../providers';
+import { GoogleAuthButton } from '../components/GoogleAuthButton';
 import { LayoutDashboard, LogIn, AlertCircle } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
     const { user, login, isLoading } = useAuth();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [errorMsg, setErrorMsg] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // Read error query param if redirected from OAuth callback failure
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        if (errorParam) {
+            if (errorParam === 'oauth_failed' || errorParam === 'oauth_callback_failed' || errorParam === 'oauth_error') {
+                setErrorMsg('เกิดข้อผิดพลาดในการเข้าสู่ระบบด้วย Google กรุณาลองใหม่อีกครั้ง');
+            } else {
+                setErrorMsg('เกิดข้อผิดพลาดในการยืนยันตัวตน กรุณาลองใหม่อีกครั้ง');
+            }
+        }
+    }, [searchParams]);
 
     // Redirect if already logged in
     useEffect(() => {
@@ -67,6 +81,17 @@ export default function LoginPage() {
                     </div>
                 )}
 
+                {/* Google Sign-in Option */}
+                <GoogleAuthButton
+                    mode="login"
+                    disabled={isSubmitting}
+                    onError={(err) => setErrorMsg(err)}
+                />
+
+                <div className="auth-divider">
+                    <span>หรือใช้อีเมล</span>
+                </div>
+
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label htmlFor="email">อีเมล</label>
@@ -109,5 +134,17 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="auth-container">
+                <p style={{ color: 'var(--text-secondary)' }}>กำลังโหลด...</p>
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     );
 }

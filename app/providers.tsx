@@ -19,6 +19,7 @@ interface AuthContextType {
     isLoading: boolean;
     login: (email: string, password: string) => Promise<boolean>;
     register: (email: string, name: string, password: string) => Promise<{ success: boolean; error?: string }>;
+    signInWithGoogle: () => Promise<{ error?: string }>;
     logout: () => Promise<void>;
 }
 
@@ -39,7 +40,7 @@ function mapUser(supabaseUser: SupabaseUser): User {
     return {
         id: supabaseUser.id,
         email: supabaseUser.email ?? '',
-        name: supabaseUser.user_metadata?.name ?? supabaseUser.email ?? 'ผู้ใช้งาน',
+        name: supabaseUser.user_metadata?.full_name ?? supabaseUser.user_metadata?.display_name ?? supabaseUser.user_metadata?.name ?? supabaseUser.email ?? 'ผู้ใช้งาน',
     };
 }
 
@@ -111,6 +112,21 @@ export function Providers({ children }: { children: React.ReactNode }) {
         return !error;
     };
 
+    // Google OAuth implementation
+    const signInWithGoogle = async (): Promise<{ error?: string }> => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: `${window.location.origin}/auth/callback`,
+            },
+        });
+
+        if (error) {
+            return { error: error.message };
+        }
+        return {};
+    };
+
     // Logout implementation
     const logout = async () => {
         await supabase.auth.signOut();
@@ -119,7 +135,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
     return (
         <ThemeContext.Provider value={{ theme, toggleTheme }}>
-            <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>
+            <AuthContext.Provider value={{ user, isLoading, login, register, signInWithGoogle, logout }}>
                 <ToastProvider>
                     {children}
                 </ToastProvider>

@@ -13,6 +13,7 @@ export function createClient() {
                 }),
                 signUp: async () => ({ error: new Error('Supabase environment variables are missing') }),
                 signInWithPassword: async () => ({ error: new Error('Supabase environment variables are missing') }),
+                signInWithOAuth: async () => ({ error: new Error('Supabase environment variables are missing') }),
                 signOut: async () => ({}),
             },
         } as any;

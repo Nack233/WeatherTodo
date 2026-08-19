@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../providers';
+import { GoogleAuthButton } from '../components/GoogleAuthButton';
 import { LayoutDashboard, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
@@ -94,6 +95,17 @@ export default function RegisterPage() {
                         <span>{successMsg}</span>
                     </div>
                 )}
+
+                {/* Google Sign-up Option */}
+                <GoogleAuthButton
+                    mode="register"
+                    disabled={isSubmitting}
+                    onError={(err) => setErrorMsg(err)}
+                />
+
+                <div className="auth-divider">
+                    <span>หรือสมัครด้วยอีเมล</span>
+                </div>
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">

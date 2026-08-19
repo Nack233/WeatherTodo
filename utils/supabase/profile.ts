@@ -2,6 +2,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
 
 export async function ensureProfileExists(supabase: SupabaseClient, user: User) {
     const displayName =
+        user.user_metadata?.full_name ??
         user.user_metadata?.display_name ??
         user.user_metadata?.name ??
         user.email ??
