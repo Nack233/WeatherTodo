@@ -127,7 +127,7 @@ export function createTodoAddedFlex(todo: {
     const priorityColor =
         todo.priority === 'high' ? '#EF4444' : todo.priority === 'medium' ? '#F59E0B' : '#10B981';
     const priorityText =
-        todo.priority === 'high' ? 'สูง' : todo.priority === 'medium' ? 'ปานกลาง' : 'ทั่วไป';
+        todo.priority === 'high' ? 'ด่วนมาก 🔥' : todo.priority === 'medium' ? 'ปานกลาง ⚡' : 'ทั่วไป 🌸';
 
     return {
         type: 'bubble',
@@ -140,7 +140,7 @@ export function createTodoAddedFlex(todo: {
             contents: [
                 {
                     type: 'text',
-                    text: '✅ เพิ่มรายการงานเรียบร้อย',
+                    text: '✨ จดงานให้เรียบร้อยแล้วค่าา 📝',
                     weight: 'bold',
                     size: 'md',
                     color: '#38BDF8',
@@ -230,7 +230,7 @@ export function createTodoListFlex(
                 contents: [
                     {
                         type: 'text',
-                        text: '📋 รายการสิ่งที่ต้องทำ (To-Do)',
+                        text: '📋 รายการสิ่งที่ต้องทำ ✨',
                         weight: 'bold',
                         size: 'md',
                         color: '#38BDF8',
@@ -245,7 +245,7 @@ export function createTodoListFlex(
                 contents: [
                     {
                         type: 'text',
-                        text: '🎉 ไม่มีงานค้างในขณะนี้! พักผ่อนได้สบายใจเลยครับ',
+                        text: '🎉 ว้าว! ไม่มีงานค้างเลยค่า พักผ่อนให้สบายใจเลยน้า 💖',
                         color: '#94A3B8',
                         size: 'sm',
                         wrap: true,
@@ -298,7 +298,7 @@ export function createTodoListFlex(
             contents: [
                 {
                     type: 'text',
-                    text: `📋 รายการสิ่งที่ต้องทำ (${todos.filter(t => !t.completed).length} งานค้าง)`,
+                    text: `📋 รายการงาน (${todos.filter(t => !t.completed).length} งานที่ต้องทำ) ✨`,
                     weight: 'bold',
                     size: 'md',
                     color: '#38BDF8',
@@ -316,7 +316,7 @@ export function createTodoListFlex(
                     ? [
                           {
                               type: 'text' as const,
-                              text: `...และอีก ${todos.length - 8} รายการบน Dashboard`,
+                              text: `...และอีก ${todos.length - 8} รายการบนเว็บ Dashboard น้า 💖`,
                               size: 'xs' as const,
                               color: '#94A3B8',
                               margin: 'lg' as const,
@@ -339,7 +339,7 @@ export function createExpenseAddedFlex(expense: {
     note?: string;
 }): LineFlexBubble {
     const isExpense = expense.type === 'expense';
-    const titleText = isExpense ? '💸 บันทึกรายจ่ายเรียบร้อย' : '💰 บันทึกรายรับเรียบร้อย';
+    const titleText = isExpense ? '💸 จดรายจ่ายให้แล้วน้า ✨' : '💰 เย้! จดรายรับให้แล้วค่า ✨';
     const headerColor = isExpense ? '#EF4444' : '#10B981';
     const formattedAmount = `฿${expense.amount.toLocaleString('th-TH')}`;
 
@@ -444,7 +444,7 @@ export function createHelpFlex(): LineFlexBubble {
             contents: [
                 {
                     type: 'text',
-                    text: '🤖 ผู้ช่วย AI WeatherTodo',
+                    text: '✨ หนูน้องผู้ช่วย AI WeatherTodo 🎀',
                     weight: 'bold',
                     size: 'md',
                     color: '#38BDF8',
@@ -460,7 +460,7 @@ export function createHelpFlex(): LineFlexBubble {
             contents: [
                 {
                     type: 'text',
-                    text: 'คุณสามารถพิมพ์สั่งงานด้วยภาษาพูดได้เลย เช่น:',
+                    text: 'ตัวเองพิมพ์บอกสิ่งที่ต้องการได้เลยน้า เช่น:',
                     size: 'sm',
                     color: '#E2E8F0',
                 },

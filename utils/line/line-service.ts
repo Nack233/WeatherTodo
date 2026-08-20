@@ -163,7 +163,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         const weather = await fetchCurrentWeather();
         if (weather) {
             const desc = WEATHER_CODE_TEXT[weather.weather_code] || 'สภาพอากาศทั่วไป';
-            const msg = `🌤️ สภาพอากาศ อ.เมือง จันทบุรี วันนี้:\n\n🌡️ อุณหภูมิ: ${Math.round(weather.temperature_2m)}°C (รู้สึกเหมือน ${Math.round(weather.apparent_temperature)}°C)\n☁️ สภาพท้องฟ้า: ${desc}\n💧 ความชื้น: ${weather.relative_humidity_2m}%\n🌧️ ปริมาณฝน: ${weather.precipitation} มม.\n💨 ความเร็วลม: ${weather.wind_speed_10m} กม./ชม.`;
+            const msg = `🌤️ รายงานสภาพอากาศ อ.เมือง จันทบุรี วันนี้ค่า ✨\n\n🌡️ อุณหภูมิ: ${Math.round(weather.temperature_2m)}°C (รู้สึกเหมือน ${Math.round(weather.apparent_temperature)}°C)\n☁️ สภาพท้องฟ้า: ${desc}\n💧 ความชื้น: ${weather.relative_humidity_2m}%\n🌧️ ปริมาณฝน: ${weather.precipitation} มม.\n💨 ความเร็วลม: ${weather.wind_speed_10m} กม./ชม.\n\nอย่าลืมดูแลสุขภาพและพกร่มด้วยนะคะ 💖☔`;
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
@@ -175,7 +175,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: 'ขออภัยครับ ไม่สามารถดึงข้อมูลสภาพอากาศในขณะนี้ได้',
+                    text: 'งืออ ขออภัยด้วยน้า ตอนนี้น้องดึงข้อมูลสภาพอากาศไม่ได้ชั่วคราวค่า 🥺 ลองใหม่อีกทีนะค๊า',
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -190,7 +190,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `✅ ผูกบัญชี LINE กับอีเมล ${intent.link_account.email} สำเร็จเรียบร้อยแล้วครับ! คุณสามารถเริ่มพิมพ์สั่งงานหรือบันทึกข้อมูลได้ทันที`,
+                    text: `เย้! ผูกบัญชี LINE กับอีเมล ${intent.link_account.email} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -198,7 +198,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `❌ ไม่พบบัญชีอีเมล ${intent.link_account.email} ในระบบ WeatherTodo กรุณาตรวจสอบอีเมลที่ใช้สมัครบนเว็บ Dashboard อีกครั้งครับ`,
+                    text: `ง่าา ไม่พบบัญชีอีเมล ${intent.link_account.email} ในระบบ WeatherTodo เลยค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -208,7 +208,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
 
     // Handle General Greetings / Chat (does not strictly require login)
     if (intent.action === 'general_chat' && (text.includes('สวัสดี') || text.includes('หวัดดี') || text.includes('hello') || text.includes('hi'))) {
-        const greetingReply = intent.chat_response || 'สวัสดีครับ! ผมคือผู้ช่วย AI WeatherTodo คุณสามารถพิมพ์บอกสิ่งที่ต้องการได้เลย เช่น "เตือนซื้อของพรุ่งนี้" หรือ "กินข้าว 60 บาท"';
+        const greetingReply = intent.chat_response || 'สวัสดีค่า! หนูน้องผู้ช่วย WeatherTodo มาแล้วว ✨ มีอะไรให้ช่วยจัดการ To-Do หรือจดรายจ่ายบอกเค้าได้เลยน้า 💖';
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
@@ -227,7 +227,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
-                text: '👋 สวัสดีครับ! บัญชี LINE ของคุณยังไม่ได้ผูกกับระบบ WeatherTodo Dashboard\n\n📌 วิธีผูกบัญชี:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" เช่น\n👉 ผูกบัญชี ' + (intent.link_account?.email || 'your-email@gmail.com'),
+                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ WeatherTodo Dashboard น้า ✨\n\n📌 วิธีผูกบัญชีง่ายม๊าก:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" ได้เลยค่า เช่น\n👉 ผูกบัญชี ' + (intent.link_account?.email || 'your-email@gmail.com'),
                 quickReply: DEFAULT_QUICK_REPLY,
             },
         ]);
@@ -257,7 +257,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 await replyLineMessage(replyToken, [
                     {
                         type: 'text',
-                        text: `❌ เกิดข้อผิดพลาดในการบันทึก To-Do: ${error?.message || 'โปรดลองใหม่'}`,
+                        text: `งืออ เกิดข้อผิดพลาดในการบันทึก To-Do ค่า: ${error?.message || 'โปรดลองใหม่อีกครั้งน้า'} 🥺`,
                     },
                 ]);
             } else {
@@ -290,7 +290,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 await replyLineMessage(replyToken, [
                     {
                         type: 'text',
-                        text: '❌ เกิดข้อผิดพลาดในการดึงรายการงาน',
+                        text: 'งืออ เกิดข้อผิดพลาดในการดึงรายการงานค่า 🥺',
                     },
                 ]);
             } else {
@@ -328,7 +328,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 await replyLineMessage(replyToken, [
                     {
                         type: 'text',
-                        text: `🎉 ยินดีด้วยครับ! ทำเครื่องหมายงาน "${match.title}" เป็นเสร็จสิ้นแล้ว ✅`,
+                        text: `🎉 เก่งมากเลยค่า! ติ๊กถูกงาน "${match.title}" ให้ว่าทำเสร็จแล้วน้า พักผ่อนได้เลยงับ 💖✨`,
                         quickReply: DEFAULT_QUICK_REPLY,
                     },
                 ]);
@@ -336,7 +336,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 await replyLineMessage(replyToken, [
                     {
                         type: 'text',
-                        text: `🔍 ไม่พบงานที่ตรงกับ "${keyword}" หรืออาจทำงานนี้เสร็จไปแล้วครับ`,
+                        text: `🔍 ง่าา ไม่พบงานที่ตรงกับ "${keyword}" หรืออาจทำงานนี้เสร็จไปแล้วน้า ✨`,
                         quickReply: DEFAULT_QUICK_REPLY,
                     },
                 ]);
@@ -350,7 +350,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 await replyLineMessage(replyToken, [
                     {
                         type: 'text',
-                        text: 'กรุณาระบุจำนวนเงินที่ต้องการบันทึกด้วยครับ เช่น "กินข้าว 60 บาท"',
+                        text: 'ตัวเองระบุจำนวนเงินที่จะจดด้วยน้า เช่น "กินข้าว 60 บาท" ค่า 💸✨',
                     },
                 ]);
                 return;
@@ -371,7 +371,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 await replyLineMessage(replyToken, [
                     {
                         type: 'text',
-                        text: `❌ เกิดข้อผิดพลาดในการบันทึกรายรับ-รายจ่าย: ${error.message}`,
+                        text: `งืออ เกิดข้อผิดพลาดในการบันทึกรายรับ-รายจ่ายค่า: ${error.message} 🥺`,
                     },
                 ]);
             } else {
@@ -410,7 +410,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             });
 
             const net = incomeTotal - expenseTotal;
-            const summaryMsg = `📊 สรุปการเงินประจำวันนี้ (${todayDateStr}):\n\n💰 รายรับ: +฿${incomeTotal.toLocaleString('th-TH')}\n💸 รายจ่าย: -฿${expenseTotal.toLocaleString('th-TH')}\n⚖️ ยอดสุทธิวันนี้: ${net >= 0 ? '+' : ''}฿${net.toLocaleString('th-TH')}\n\n(บันทึกทั้งหมด ${todayExpenses?.length || 0} รายการ)`;
+            const summaryMsg = `📊 สรุปการเงินประจำวันนี้ (${todayDateStr}) มาแล้วค่า ✨\n\n💰 รายรับ: +฿${incomeTotal.toLocaleString('th-TH')}\n💸 รายจ่าย: -฿${expenseTotal.toLocaleString('th-TH')}\n⚖️ ยอดสุทธิวันนี้: ${net >= 0 ? '+' : ''}฿${net.toLocaleString('th-TH')}\n\nบันทึกวันนี้ทั้งหมด ${todayExpenses?.length || 0} รายการค่า 💖`;
 
             await replyLineMessage(replyToken, [
                 {
@@ -426,7 +426,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         default: {
             const replyMsg =
                 intent.chat_response ||
-                'ผมพร้อมช่วยจัดการ To-Do, บันทึกค่าใช้จ่าย, และเช็กสภาพอากาศครับ พิมพ์บอกสิ่งที่ต้องการได้เลย!';
+                'เค้าพร้อมช่วยจัดการ To-Do, บันทึกค่าใช้จ่าย และเช็กสภาพอากาศให้เสมอน้า พิมพ์บอกเค้าได้เลยค่า ✨🎀';
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
