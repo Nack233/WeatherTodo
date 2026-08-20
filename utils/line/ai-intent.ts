@@ -1,4 +1,4 @@
-import type { AiIntentResult } from '@/types/line';
+import type { AiIntentResult, AiIntentResponse } from '@/types/line';
 
 /**
  * Fallback heuristic parser when AI API is unavailable
@@ -109,7 +109,7 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
 /**
  * Use Gemini AI to extract intent and parameters from user's natural language
  */
-export async function analyzeLineIntent(userMessage: string): Promise<AiIntentResult> {
+export async function analyzeLineIntent(userMessage: string): Promise<AiIntentResponse> {
     const today = new Date();
     // Thai local date format YYYY-MM-DD
     const todayStr = today.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
@@ -147,7 +147,8 @@ Action Types ที่เป็นไปได้:
 9. "general_chat": ข้อความทักทาย หรือคำถามทั่วไปที่ไม่เข้าหมวดหมู่ข้างต้น
    - สกัด: chat_response (คำตอบภาษาไทยสไตล์สาวน้อยน่ารัก สดใส มีพลังบวก)
 
-ส่งออกคำตอบในรูปแบบ JSON ONLY เท่านั้น ตามโครงสร้างนี้:
+ส่งออกคำตอบในรูปแบบ JSON ONLY เท่านั้น:
+- หากมี 1 คำสั่ง ให้ส่งออกเป็น JSON Object โครงสร้างนี้:
 {
   "action": "add_todo" | "list_todos" | "complete_todo" | "add_expense" | "list_expenses" | "get_weather" | "link_account" | "help" | "general_chat",
   "confidence": 0.0 - 1.0,
@@ -156,7 +157,8 @@ Action Types ที่เป็นไปได้:
   "expense": { "amount": number, "type": "expense"|"income", "category": string, "note": string },
   "link_account": { "email": string },
   "chat_response": string
-}`;
+}
+- หากผู้ใช้สั่งงานหลายอย่างในประโยคเดียว ให้ส่งออกเป็น JSON Array ของ Object ข้างต้น เช่น [ { "action": "add_todo", ... }, { "action": "add_todo", ... } ]`;
 
     try {
         const response = await fetch(
@@ -193,7 +195,10 @@ Action Types ที่เป็นไปได้:
             return fallbackIntentParser(userMessage, todayStr);
         }
 
-        const parsed = JSON.parse(rawJsonText) as AiIntentResult;
+        const parsed = JSON.parse(rawJsonText) as AiIntentResponse;
+        if (Array.isArray(parsed) && parsed.length === 1) {
+            return parsed[0];
+        }
         return parsed;
     } catch (err) {
         console.error('[AI Intent] Parse error:', err);

@@ -8,7 +8,7 @@ import {
     createHelpFlex,
     DEFAULT_QUICK_REPLY,
 } from './line-client';
-import type { LineWebhookEvent, LineMessage } from '@/types/line';
+import type { LineWebhookEvent, LineMessage, AiIntentResult, AiIntentResponse } from '@/types/line';
 
 const DEFAULT_LOCATION = { name: 'จันทบุรี', lat: 12.6114, lon: 102.1039 };
 
@@ -142,11 +142,14 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     const supabase = createAdminClient();
 
     // 1. Check AI intent
-    const intent = await analyzeLineIntent(text);
-    console.log('[LINE Service] Analyzed Intent:', JSON.stringify(intent));
+    const rawIntent = await analyzeLineIntent(text);
+    console.log('[LINE Service] Analyzed Intent:', JSON.stringify(rawIntent));
+
+    const intents: AiIntentResult[] = Array.isArray(rawIntent) ? rawIntent : [rawIntent];
+    const firstIntent = intents[0] || { action: 'general_chat', confidence: 0.5 };
 
     // Handle Help
-    if (intent.action === 'help') {
+    if (firstIntent.action === 'help') {
         await replyLineMessage(replyToken, [
             {
                 type: 'flex',
@@ -159,7 +162,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     }
 
     // Handle Weather Query (does not require login)
-    if (intent.action === 'get_weather') {
+    if (firstIntent.action === 'get_weather') {
         const weather = await fetchCurrentWeather();
         if (weather) {
             const desc = WEATHER_CODE_TEXT[weather.weather_code] || 'สภาพอากาศทั่วไป';
@@ -184,13 +187,13 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     }
 
     // Handle Account Linking Request
-    if (intent.action === 'link_account' && intent.link_account?.email) {
-        const success = await linkAccountByEmail(lineUserId, intent.link_account.email);
+    if (firstIntent.action === 'link_account' && firstIntent.link_account?.email) {
+        const success = await linkAccountByEmail(lineUserId, firstIntent.link_account.email);
         if (success) {
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `เย้! ผูกบัญชี LINE กับอีเมล ${intent.link_account.email} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
+                    text: `เย้! ผูกบัญชี LINE กับอีเมล ${firstIntent.link_account.email} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -198,7 +201,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `ง่าา ไม่พบบัญชีอีเมล ${intent.link_account.email} ในระบบ Day Base เลยค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
+                    text: `ง่าา ไม่พบบัญชีอีเมล ${firstIntent.link_account.email} ในระบบ Day Base เลยค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -207,8 +210,8 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     }
 
     // Handle General Greetings / Chat (does not strictly require login)
-    if (intent.action === 'general_chat' && (text.includes('สวัสดี') || text.includes('หวัดดี') || text.includes('hello') || text.includes('hi'))) {
-        const greetingReply = intent.chat_response || 'สวัสดีค่า! น้องเบสผู้ช่วยประจำ Day Base มาแล้วว ✨ มีอะไรให้เบสช่วยจัดการ To-Do หรือจดรายจ่ายบอกเบสได้เลยน้า 💖';
+    if (intents.length === 1 && firstIntent.action === 'general_chat' && (text.includes('สวัสดี') || text.includes('หวัดดี') || text.includes('hello') || text.includes('hi'))) {
+        const greetingReply = firstIntent.chat_response || 'สวัสดีค่า! น้องเบสผู้ช่วยประจำ Day Base มาแล้วว ✨ มีอะไรให้เบสช่วยจัดการ To-Do หรือจดรายจ่ายบอกเบสได้เลยน้า 💖';
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
@@ -227,20 +230,92 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
-                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ Day Base Dashboard น้า ✨\n\n📌 วิธีผูกบัญชีง่ายม๊าก:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" ได้เลยค่า เช่น\n👉 ผูกบัญชี ' + (intent.link_account?.email || 'your-email@gmail.com'),
+                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ Day Base Dashboard น้า ✨\n\n📌 วิธีผูกบัญชีง่ายม๊าก:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" ได้เลยค่า เช่น\n👉 ผูกบัญชี ' + (firstIntent.link_account?.email || 'your-email@gmail.com'),
                 quickReply: DEFAULT_QUICK_REPLY,
             },
         ]);
         return;
     }
 
+    // Check if there are multiple todos or expenses to add
+    const todosToAdd = intents.filter(i => i.action === 'add_todo');
+    const expensesToAdd = intents.filter(i => i.action === 'add_expense');
+
+    if (todosToAdd.length > 1) {
+        const rows = todosToAdd.map(t => ({
+            user_id: userId,
+            title: t.todo?.title || text,
+            priority: t.todo?.priority || 'medium',
+            due_date: t.todo?.due_date || null,
+            completed: false,
+        }));
+
+        const { data: newTodos, error } = await supabase.from('todos').insert(rows).select();
+
+        if (error || !newTodos || newTodos.length === 0) {
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `งืออ เกิดข้อผิดพลาดในการบันทึก To-Do ค่า: ${error?.message || 'โปรดลองใหม่อีกครั้งน้า'} 🥺`,
+                },
+            ]);
+        } else {
+            const summaryTitles = newTodos
+                .map((t, idx) => `${idx + 1}. 📝 ${t.title} ${t.due_date ? `(📅 ${t.due_date})` : ''}`)
+                .join('\n');
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `✨ เบสจดงาน ${newTodos.length} รายการให้เรียบร้อยแล้วค่าา 🎉\n\n${summaryTitles}\n\nสู้ๆ น้า เป็นกำลังใจให้เสมอค่า 💖`,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        }
+        return;
+    }
+
+    if (expensesToAdd.length > 1) {
+        const todayDateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+        const rows = expensesToAdd.map(e => ({
+            user_id: userId,
+            amount: e.expense?.amount || 0,
+            type: e.expense?.type || 'expense',
+            category: e.expense?.category || 'ทั่วไป',
+            note: e.expense?.note || null,
+            transaction_date: todayDateStr,
+        }));
+
+        const { data: newExp, error } = await supabase.from('expenses').insert(rows).select();
+
+        if (error || !newExp) {
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `งืออ เกิดข้อผิดพลาดในการบันทึกรายจ่ายค่า: ${error?.message || 'โปรดลองใหม่อีกครั้งน้า'} 🥺`,
+                },
+            ]);
+        } else {
+            const summaryExp = newExp
+                .map((x, idx) => `${idx + 1}. ${x.type === 'expense' ? '💸' : '💰'} ${x.note || x.category}: ฿${x.amount}`)
+                .join('\n');
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `✨ เบสจดบันทึกการเงิน ${newExp.length} รายการให้เรียบร้อยแล้วค่า 💸\n\n${summaryExp}\n\n💖`,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        }
+        return;
+    }
+
     // ==========================================
-    // DISPATCH ACTIONS
+    // DISPATCH SINGLE ACTION
     // ==========================================
 
-    switch (intent.action) {
+    switch (firstIntent.action) {
         case 'add_todo': {
-            const todoInput = intent.todo || { title: text };
+            const todoInput = firstIntent.todo || { title: text };
             const { data: newTodo, error } = await supabase
                 .from('todos')
                 .insert({
@@ -307,7 +382,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         }
 
         case 'complete_todo': {
-            const keyword = intent.complete_todo?.keyword || text;
+            const keyword = firstIntent.complete_todo?.keyword || text;
             // Find uncompleted todo matching keyword
             const { data: todos } = await supabase
                 .from('todos')
@@ -345,7 +420,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         }
 
         case 'add_expense': {
-            const exp = intent.expense;
+            const exp = firstIntent.expense;
             if (!exp || !exp.amount) {
                 await replyLineMessage(replyToken, [
                     {
@@ -425,7 +500,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         case 'general_chat':
         default: {
             const replyMsg =
-                intent.chat_response ||
+                firstIntent.chat_response ||
                 'เบสพร้อมช่วยจัดการ To-Do, บันทึกค่าใช้จ่าย และเช็กสภาพอากาศให้เสมอน้า พิมพ์บอกเบสได้เลยค่า ✨🎀';
             await replyLineMessage(replyToken, [
                 {

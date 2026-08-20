@@ -183,7 +183,7 @@ export interface AiIntentResult {
     todo?: {
         title: string;
         priority?: 'low' | 'medium' | 'high';
-        due_date?: string; // YYYY-MM-DD
+        due_date?: string | null; // YYYY-MM-DD
         category?: string;
     };
     complete_todo?: {
@@ -200,3 +200,5 @@ export interface AiIntentResult {
     };
     chat_response?: string;
 }
+
+export type AiIntentResponse = AiIntentResult | AiIntentResult[];
