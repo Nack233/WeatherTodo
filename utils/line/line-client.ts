@@ -24,7 +24,8 @@ export function validateLineSignature(
 
     const matches = hash === signature;
     if (!matches) {
-        console.warn(`[Signature Mismatch] Secret Length: ${secret.length} (Expected: 32 chars). Has quotes?: ${secret.startsWith('"') || secret.startsWith("'")}. Signature length: ${signature.length}`);
+        const secretPreview = secret.length >= 6 ? `${secret.slice(0, 3)}...${secret.slice(-3)}` : secret;
+        console.warn(`[Signature Mismatch] Secret used: ${secretPreview} (Length: ${secret.length}). Signature received: ${signature.slice(0, 6)}...`);
     }
 
     return matches;
