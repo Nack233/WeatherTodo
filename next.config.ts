@@ -14,7 +14,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: "Content-Security-Policy",
-            value: "default-src 'self'; connect-src 'self' https://*.supabase.co https://api.open-meteo.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+            value: "default-src 'self'; img-src 'self' data: https://qr-official.line.me https://*.line.me; connect-src 'self' https://*.supabase.co https://api.open-meteo.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
           },
           {
             key: "X-Content-Type-Options",

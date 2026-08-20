@@ -34,6 +34,8 @@ const Calendar   = dynamic(() => import('./calendar'),    { loading: () => <TabS
 const Tracker    = dynamic(() => import('./tracker'),     { loading: () => <TabSkeleton /> });
 const FuelPrices = dynamic(() => import('./fuel-prices'), { loading: () => <TabSkeleton /> });
 
+import MascotLineWidget from '@/app/components/MascotLineWidget';
+
 // Icons
 import { 
     LayoutDashboard, Home, CloudSun, CheckSquare, 
@@ -278,6 +280,9 @@ export default function DashboardPage() {
                     <span>น้ำมัน</span>
                 </button>
             </nav>
+
+            {/* Floating Mascot LINE Bot Assistant Widget */}
+            <MascotLineWidget userEmail={user?.email || ''} userName={user?.name || 'คุณ'} />
         </div>
     );
 }
