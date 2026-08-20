@@ -206,6 +206,19 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         return;
     }
 
+    // Handle General Greetings / Chat (does not strictly require login)
+    if (intent.action === 'general_chat' && (text.includes('สวัสดี') || text.includes('หวัดดี') || text.includes('hello') || text.includes('hi'))) {
+        const greetingReply = intent.chat_response || 'สวัสดีครับ! ผมคือผู้ช่วย AI WeatherTodo คุณสามารถพิมพ์บอกสิ่งที่ต้องการได้เลย เช่น "เตือนซื้อของพรุ่งนี้" หรือ "กินข้าว 60 บาท"';
+        await replyLineMessage(replyToken, [
+            {
+                type: 'text',
+                text: `👋 ${greetingReply}`,
+                quickReply: DEFAULT_QUICK_REPLY,
+            },
+        ]);
+        return;
+    }
+
     // Resolve User ID for data operations
     const userId = await resolveUserId(lineUserId);
 
@@ -214,27 +227,8 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
-                text: '👋 สวัสดีครับ! บัญชี LINE ของคุณยังไม่ได้ผูกกับระบบ WeatherTodo Dashboard\n\n📌 วิธีผูกบัญชี:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" เช่น\n👉 ผูกบัญชี myname@gmail.com',
-                quickReply: {
-                    items: [
-                        {
-                            type: 'action',
-                            action: {
-                                type: 'message',
-                                label: '💡 วิธีใช้งาน',
-                                text: 'วิธีใช้งาน',
-                            },
-                        },
-                        {
-                            type: 'action',
-                            action: {
-                                type: 'message',
-                                label: '☀️ สภาพอากาศ',
-                                text: 'สภาพอากาศวันนี้',
-                            },
-                        },
-                    ],
-                },
+                text: '👋 สวัสดีครับ! บัญชี LINE ของคุณยังไม่ได้ผูกกับระบบ WeatherTodo Dashboard\n\n📌 วิธีผูกบัญชี:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" เช่น\n👉 ผูกบัญชี ' + (intent.link_account?.email || 'your-email@gmail.com'),
+                quickReply: DEFAULT_QUICK_REPLY,
             },
         ]);
         return;
