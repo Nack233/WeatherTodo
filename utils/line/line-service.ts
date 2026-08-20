@@ -1,0 +1,446 @@
+import { createAdminClient } from '@/utils/supabase/admin';
+import { analyzeLineIntent } from './ai-intent';
+import {
+    replyLineMessage,
+    createTodoAddedFlex,
+    createTodoListFlex,
+    createExpenseAddedFlex,
+    createHelpFlex,
+    DEFAULT_QUICK_REPLY,
+} from './line-client';
+import type { LineWebhookEvent, LineMessage } from '@/types/line';
+
+const DEFAULT_LOCATION = { name: 'จันทบุรี', lat: 12.6114, lon: 102.1039 };
+
+const WEATHER_CODE_TEXT: Record<number, string> = {
+    0: 'ท้องฟ้าโปร่ง',
+    1: 'ท้องฟ้าโปร่งส่วนใหญ่',
+    2: 'มีเมฆบางส่วน',
+    3: 'ท้องฟ้าครึ้มมีเมฆหนา',
+    45: 'มีหมอกจัด',
+    48: 'มีหมอกน้ำค้างแข็ง',
+    51: 'ฝนตกปรอยๆ เล็กน้อย',
+    53: 'ฝนตกปรอยๆ ปานกลาง',
+    55: 'ฝนตกปรอยๆ หนาแน่น',
+    61: 'ฝนตกเล็กน้อย',
+    63: 'ฝนตกปานกลาง',
+    65: 'ฝนตกหนัก',
+    80: 'ฝนไล่ช้างตกเบาบาง',
+    81: 'ฝนไล่ช้างตกปานกลาง',
+    82: 'ฝนไล่ช้างตกหนักมาก',
+    95: 'พายุฝนฟ้าคะนอง',
+    96: 'พายุฝนฟ้าคะนองมีลูกเห็บตกเล็กน้อย',
+    99: 'พายุฝนฟ้าคะนองมีลูกเห็บตกหนัก',
+};
+
+/**
+ * Resolve Supabase user_id from LINE User ID
+ */
+export async function resolveUserId(lineUserId: string): Promise<string | null> {
+    try {
+        const supabase = createAdminClient();
+
+        // 1. Check line_accounts mapping table
+        const { data: lineAccount } = await supabase
+            .from('line_accounts')
+            .select('user_id')
+            .eq('line_user_id', lineUserId)
+            .maybeSingle();
+
+        if (lineAccount?.user_id) {
+            return lineAccount.user_id;
+        }
+
+        // 2. If no direct binding found, check if there's only 1 profile in the database
+        // (Enables seamless zero-friction setup for single-user dashboard)
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('id')
+            .limit(2);
+
+        if (profiles && profiles.length === 1) {
+            const singleUserId = profiles[0].id;
+            // Auto-link for convenience
+            await supabase.from('line_accounts').upsert({
+                line_user_id: lineUserId,
+                user_id: singleUserId,
+                display_name: 'LINE User',
+            });
+            return singleUserId;
+        }
+
+        return null;
+    } catch (err) {
+        console.error('[LINE Service] resolveUserId error:', err);
+        return null;
+    }
+}
+
+/**
+ * Link LINE User ID to a Supabase user by email
+ */
+export async function linkAccountByEmail(lineUserId: string, email: string): Promise<boolean> {
+    try {
+        const supabase = createAdminClient();
+
+        // Search user in auth
+        const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
+        if (authError || !authData.users) {
+            console.error('[LINE Service] listUsers error:', authError);
+            return false;
+        }
+
+        const matchedUser = authData.users.find(
+            u => u.email?.toLowerCase() === email.toLowerCase()
+        );
+
+        if (!matchedUser) {
+            return false;
+        }
+
+        const { error } = await supabase.from('line_accounts').upsert({
+            line_user_id: lineUserId,
+            user_id: matchedUser.id,
+            display_name: matchedUser.email || 'Linked User',
+            updated_at: new Date().toISOString(),
+        });
+
+        return !error;
+    } catch (err) {
+        console.error('[LINE Service] linkAccountByEmail error:', err);
+        return false;
+    }
+}
+
+/**
+ * Fetch current weather from Open-Meteo
+ */
+async function fetchCurrentWeather() {
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${DEFAULT_LOCATION.lat}&longitude=${DEFAULT_LOCATION.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=Asia/Bangkok`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data?.current;
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Process incoming LINE Webhook message event
+ */
+export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<void> {
+    const replyToken = event.replyToken;
+    const lineUserId = event.source.userId;
+    const text = event.message?.text?.trim();
+
+    if (!replyToken || !lineUserId || !text) {
+        return;
+    }
+
+    const supabase = createAdminClient();
+
+    // 1. Check AI intent
+    const intent = await analyzeLineIntent(text);
+    console.log('[LINE Service] Analyzed Intent:', JSON.stringify(intent));
+
+    // Handle Help
+    if (intent.action === 'help') {
+        await replyLineMessage(replyToken, [
+            {
+                type: 'flex',
+                altText: 'วิธีใช้งานผู้ช่วย AI WeatherTodo',
+                contents: createHelpFlex(),
+                quickReply: DEFAULT_QUICK_REPLY,
+            },
+        ]);
+        return;
+    }
+
+    // Handle Weather Query (does not require login)
+    if (intent.action === 'get_weather') {
+        const weather = await fetchCurrentWeather();
+        if (weather) {
+            const desc = WEATHER_CODE_TEXT[weather.weather_code] || 'สภาพอากาศทั่วไป';
+            const msg = `🌤️ สภาพอากาศ อ.เมือง จันทบุรี วันนี้:\n\n🌡️ อุณหภูมิ: ${Math.round(weather.temperature_2m)}°C (รู้สึกเหมือน ${Math.round(weather.apparent_temperature)}°C)\n☁️ สภาพท้องฟ้า: ${desc}\n💧 ความชื้น: ${weather.relative_humidity_2m}%\n🌧️ ปริมาณฝน: ${weather.precipitation} มม.\n💨 ความเร็วลม: ${weather.wind_speed_10m} กม./ชม.`;
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: msg,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        } else {
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: 'ขออภัยครับ ไม่สามารถดึงข้อมูลสภาพอากาศในขณะนี้ได้',
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        }
+        return;
+    }
+
+    // Handle Account Linking Request
+    if (intent.action === 'link_account' && intent.link_account?.email) {
+        const success = await linkAccountByEmail(lineUserId, intent.link_account.email);
+        if (success) {
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `✅ ผูกบัญชี LINE กับอีเมล ${intent.link_account.email} สำเร็จเรียบร้อยแล้วครับ! คุณสามารถเริ่มพิมพ์สั่งงานหรือบันทึกข้อมูลได้ทันที`,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        } else {
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `❌ ไม่พบบัญชีอีเมล ${intent.link_account.email} ในระบบ WeatherTodo กรุณาตรวจสอบอีเมลที่ใช้สมัครบนเว็บ Dashboard อีกครั้งครับ`,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        }
+        return;
+    }
+
+    // Resolve User ID for data operations
+    const userId = await resolveUserId(lineUserId);
+
+    if (!userId) {
+        // Unlinked user guidance
+        await replyLineMessage(replyToken, [
+            {
+                type: 'text',
+                text: '👋 สวัสดีครับ! บัญชี LINE ของคุณยังไม่ได้ผูกกับระบบ WeatherTodo Dashboard\n\n📌 วิธีผูกบัญชี:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" เช่น\n👉 ผูกบัญชี myname@gmail.com',
+                quickReply: {
+                    items: [
+                        {
+                            type: 'action',
+                            action: {
+                                type: 'message',
+                                label: '💡 วิธีใช้งาน',
+                                text: 'วิธีใช้งาน',
+                            },
+                        },
+                        {
+                            type: 'action',
+                            action: {
+                                type: 'message',
+                                label: '☀️ สภาพอากาศ',
+                                text: 'สภาพอากาศวันนี้',
+                            },
+                        },
+                    ],
+                },
+            },
+        ]);
+        return;
+    }
+
+    // ==========================================
+    // DISPATCH ACTIONS
+    // ==========================================
+
+    switch (intent.action) {
+        case 'add_todo': {
+            const todoInput = intent.todo || { title: text };
+            const { data: newTodo, error } = await supabase
+                .from('todos')
+                .insert({
+                    user_id: userId,
+                    title: todoInput.title,
+                    priority: todoInput.priority || 'medium',
+                    due_date: todoInput.due_date || null,
+                    completed: false,
+                })
+                .select()
+                .single();
+
+            if (error || !newTodo) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: `❌ เกิดข้อผิดพลาดในการบันทึก To-Do: ${error?.message || 'โปรดลองใหม่'}`,
+                    },
+                ]);
+            } else {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'flex',
+                        altText: `เพิ่มงาน: ${newTodo.title}`,
+                        contents: createTodoAddedFlex({
+                            title: newTodo.title,
+                            priority: newTodo.priority,
+                            dueDate: newTodo.due_date,
+                        }),
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+            }
+            break;
+        }
+
+        case 'list_todos': {
+            const { data: todos, error } = await supabase
+                .from('todos')
+                .select('*')
+                .eq('user_id', userId)
+                .order('completed', { ascending: true })
+                .order('due_date', { ascending: true, nullsFirst: false })
+                .order('created_at', { ascending: false });
+
+            if (error || !todos) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: '❌ เกิดข้อผิดพลาดในการดึงรายการงาน',
+                    },
+                ]);
+            } else {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'flex',
+                        altText: 'รายการสิ่งที่ต้องทำ (To-Do)',
+                        contents: createTodoListFlex(todos),
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+            }
+            break;
+        }
+
+        case 'complete_todo': {
+            const keyword = intent.complete_todo?.keyword || text;
+            // Find uncompleted todo matching keyword
+            const { data: todos } = await supabase
+                .from('todos')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('completed', false);
+
+            const match = todos?.find(t =>
+                t.title.toLowerCase().includes(keyword.toLowerCase())
+            ) || todos?.[0]; // Fallback to first uncompleted todo if ambiguous
+
+            if (match) {
+                await supabase
+                    .from('todos')
+                    .update({ completed: true, updated_at: new Date().toISOString() })
+                    .eq('id', match.id);
+
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: `🎉 ยินดีด้วยครับ! ทำเครื่องหมายงาน "${match.title}" เป็นเสร็จสิ้นแล้ว ✅`,
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+            } else {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: `🔍 ไม่พบงานที่ตรงกับ "${keyword}" หรืออาจทำงานนี้เสร็จไปแล้วครับ`,
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+            }
+            break;
+        }
+
+        case 'add_expense': {
+            const exp = intent.expense;
+            if (!exp || !exp.amount) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: 'กรุณาระบุจำนวนเงินที่ต้องการบันทึกด้วยครับ เช่น "กินข้าว 60 บาท"',
+                    },
+                ]);
+                return;
+            }
+
+            const todayDateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+
+            const { error } = await supabase.from('expenses').insert({
+                user_id: userId,
+                amount: exp.amount,
+                type: exp.type,
+                category: exp.category || 'ทั่วไป',
+                note: exp.note || null,
+                transaction_date: todayDateStr,
+            });
+
+            if (error) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: `❌ เกิดข้อผิดพลาดในการบันทึกรายรับ-รายจ่าย: ${error.message}`,
+                    },
+                ]);
+            } else {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'flex',
+                        altText: `บันทึก${exp.type === 'expense' ? 'รายจ่าย' : 'รายรับ'} ฿${exp.amount}`,
+                        contents: createExpenseAddedFlex({
+                            type: exp.type,
+                            amount: exp.amount,
+                            category: exp.category,
+                            note: exp.note,
+                        }),
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+            }
+            break;
+        }
+
+        case 'list_expenses':
+        case 'get_summary': {
+            const todayDateStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+            const { data: todayExpenses } = await supabase
+                .from('expenses')
+                .select('*')
+                .eq('user_id', userId)
+                .eq('transaction_date', todayDateStr);
+
+            let incomeTotal = 0;
+            let expenseTotal = 0;
+
+            todayExpenses?.forEach(item => {
+                if (item.type === 'income') incomeTotal += Number(item.amount);
+                else expenseTotal += Number(item.amount);
+            });
+
+            const net = incomeTotal - expenseTotal;
+            const summaryMsg = `📊 สรุปการเงินประจำวันนี้ (${todayDateStr}):\n\n💰 รายรับ: +฿${incomeTotal.toLocaleString('th-TH')}\n💸 รายจ่าย: -฿${expenseTotal.toLocaleString('th-TH')}\n⚖️ ยอดสุทธิวันนี้: ${net >= 0 ? '+' : ''}฿${net.toLocaleString('th-TH')}\n\n(บันทึกทั้งหมด ${todayExpenses?.length || 0} รายการ)`;
+
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: summaryMsg,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+            break;
+        }
+
+        case 'general_chat':
+        default: {
+            const replyMsg =
+                intent.chat_response ||
+                'ผมพร้อมช่วยจัดการ To-Do, บันทึกค่าใช้จ่าย, และเช็กสภาพอากาศครับ พิมพ์บอกสิ่งที่ต้องการได้เลย!';
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: replyMsg,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+            break;
+        }
+    }
+}
