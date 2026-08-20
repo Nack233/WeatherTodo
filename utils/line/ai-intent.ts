@@ -67,8 +67,23 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
         }
     }
 
-    // Add Todo
-    if (/(เพิ่ม|เตือน|บันทึก|ต้องทำ|อย่าลืม)\s*(งาน|ว่า|ให้)?\s*(.+)/.test(trimmed)) {
+    // Calculate relative dates for fallback
+    const calcDate = (offsetDays: number) => {
+        const d = new Date();
+        d.setDate(d.getDate() + offsetDays);
+        return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+    };
+
+    let calculatedDueDate = todayStr;
+    if (/พรุ่งนี้/.test(trimmed)) {
+        calculatedDueDate = calcDate(1);
+    } else if (/มะรืน(นี้)?/.test(trimmed)) {
+        calculatedDueDate = calcDate(2);
+    }
+
+    // Add Todo (Explicit keywords or common action verbs like ซื้อ/ไป/ทำ/นัด/ส่ง)
+    const isTodoAction = /(เพิ่ม|เตือน|บันทึก|ต้องทำ|อย่าลืม|ซื้อ|ไป|นัด|ส่ง|ทำ|โทร|ซ่อม|อ่าน|จอง)/.test(trimmed);
+    if (isTodoAction || /พรุ่งนี้|มะรืน/.test(trimmed)) {
         const match = trimmed.match(/(?:เพิ่ม|เตือน|บันทึก|ต้องทำ|อย่าลืม)\s*(?:งาน|ว่า|ให้)?\s*(.+)/);
         const title = match ? match[1].trim() : trimmed;
         const isHigh = /(ด่วน|สำคัญ|มาก|รีบ)/.test(trimmed);
@@ -78,7 +93,8 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
             todo: {
                 title,
                 priority: isHigh ? 'high' : 'medium',
-                due_date: todayStr,
+                due_date: calculatedDueDate,
+                category: /ซื้อ/.test(trimmed) ? 'ส่วนตัว' : 'ทั่วไป',
             },
         };
     }
@@ -144,7 +160,7 @@ Action Types ที่เป็นไปได้:
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
