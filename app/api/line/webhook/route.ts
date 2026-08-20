@@ -12,7 +12,7 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-    const channelSecret = process.env.LINE_CHANNEL_SECRET?.trim();
+    const channelSecret = (process.env.LINE_CHANNEL_SECRET || process.env.LINE_CHANNEL__SECRET)?.trim();
 
     try {
         const rawBody = await req.text();

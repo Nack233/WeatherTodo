@@ -37,7 +37,7 @@ export async function replyLineMessage(
     replyToken: string,
     messages: LineMessage[]
 ): Promise<boolean> {
-    const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim();
+    const accessToken = (process.env.LINE_CHANNEL_ACCESS_TOKEN || process.env.LINE_CHANNEL__ACCESS_TOKEN)?.trim();
     if (!accessToken) {
         console.error('[LINE Client] LINE_CHANNEL_ACCESS_TOKEN is not configured in environment');
         return false;
