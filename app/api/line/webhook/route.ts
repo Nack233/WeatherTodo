@@ -6,7 +6,7 @@ import type { LineWebhookPayload } from '@/types/line';
 export async function GET() {
     return NextResponse.json({
         status: 'ok',
-        message: 'WeatherTodo LINE Webhook Endpoint is active',
+        message: 'Day Base LINE Webhook Endpoint is active',
         timestamp: new Date().toISOString(),
     });
 }

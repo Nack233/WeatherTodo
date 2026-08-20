@@ -435,7 +435,7 @@ export function createHelpFlex(): LineFlexBubble {
             contents: [
                 {
                     type: 'text',
-                    text: '✨ หนูน้องผู้ช่วย AI WeatherTodo 🎀',
+                    text: '✨ น้องเบส AI ผู้ช่วย Day Base 🎀',
                     weight: 'bold',
                     size: 'md',
                     color: '#38BDF8',

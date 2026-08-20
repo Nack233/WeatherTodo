@@ -14,7 +14,7 @@ export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: 
     }
 
     try {
-        const prompt = `คุณคือผู้ช่วย AI ส่วนตัวประจำวันสำหรับระบบ WeatherTodo แดชบอร์ด
+        const prompt = `คุณคือ "เบส" (Base) ผู้ช่วย AI ส่วนตัวประจำวันสำหรับระบบ Day Base แดชบอร์ด (แทนตัวเองว่าเบส สไตล์สาวน้อยน่ารัก สดใส มีพลังบวก)
 ช่วยเขียนบทสรุปภาพรวมประจำวันสั้นๆ (ความยาว 3-4 ประโยค) ในสไตล์ที่เป็นกันเอง สุภาพ มีพลังบวก และเป็นภาษาไทย
 โดยอ้างอิงจากข้อมูลล่าสุดดังต่อไปนี้:
 - ชื่อผู้ใช้: ${data.userName || 'คุณ'}
@@ -25,7 +25,7 @@ export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: 
 
 ให้สรุปและให้คำแนะนำแบบสั้นกระชับ อ่านง่าย`;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

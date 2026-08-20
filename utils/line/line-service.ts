@@ -150,7 +150,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         await replyLineMessage(replyToken, [
             {
                 type: 'flex',
-                altText: 'วิธีใช้งานผู้ช่วย AI WeatherTodo',
+                altText: 'วิธีใช้งานผู้ช่วย AI Day Base',
                 contents: createHelpFlex(),
                 quickReply: DEFAULT_QUICK_REPLY,
             },
@@ -175,7 +175,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: 'งืออ ขออภัยด้วยน้า ตอนนี้น้องดึงข้อมูลสภาพอากาศไม่ได้ชั่วคราวค่า 🥺 ลองใหม่อีกทีนะค๊า',
+                    text: 'งืออ ขออภัยด้วยน้า ตอนนี้เบสดึงข้อมูลสภาพอากาศไม่ได้ชั่วคราวค่า 🥺 ลองใหม่อีกทีนะค๊า',
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -198,7 +198,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `ง่าา ไม่พบบัญชีอีเมล ${intent.link_account.email} ในระบบ WeatherTodo เลยค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
+                    text: `ง่าา ไม่พบบัญชีอีเมล ${intent.link_account.email} ในระบบ Day Base เลยค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -208,7 +208,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
 
     // Handle General Greetings / Chat (does not strictly require login)
     if (intent.action === 'general_chat' && (text.includes('สวัสดี') || text.includes('หวัดดี') || text.includes('hello') || text.includes('hi'))) {
-        const greetingReply = intent.chat_response || 'สวัสดีค่า! หนูน้องผู้ช่วย WeatherTodo มาแล้วว ✨ มีอะไรให้ช่วยจัดการ To-Do หรือจดรายจ่ายบอกเค้าได้เลยน้า 💖';
+        const greetingReply = intent.chat_response || 'สวัสดีค่า! น้องเบสผู้ช่วยประจำ Day Base มาแล้วว ✨ มีอะไรให้เบสช่วยจัดการ To-Do หรือจดรายจ่ายบอกเบสได้เลยน้า 💖';
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
@@ -227,7 +227,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
-                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ WeatherTodo Dashboard น้า ✨\n\n📌 วิธีผูกบัญชีง่ายม๊าก:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" ได้เลยค่า เช่น\n👉 ผูกบัญชี ' + (intent.link_account?.email || 'your-email@gmail.com'),
+                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ Day Base Dashboard น้า ✨\n\n📌 วิธีผูกบัญชีง่ายม๊าก:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" ได้เลยค่า เช่น\n👉 ผูกบัญชี ' + (intent.link_account?.email || 'your-email@gmail.com'),
                 quickReply: DEFAULT_QUICK_REPLY,
             },
         ]);
@@ -426,7 +426,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         default: {
             const replyMsg =
                 intent.chat_response ||
-                'เค้าพร้อมช่วยจัดการ To-Do, บันทึกค่าใช้จ่าย และเช็กสภาพอากาศให้เสมอน้า พิมพ์บอกเค้าได้เลยค่า ✨🎀';
+                'เบสพร้อมช่วยจัดการ To-Do, บันทึกค่าใช้จ่าย และเช็กสภาพอากาศให้เสมอน้า พิมพ์บอกเบสได้เลยค่า ✨🎀';
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
