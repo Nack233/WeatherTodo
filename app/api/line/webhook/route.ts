@@ -12,17 +12,18 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-    const channelSecret = process.env.LINE_CHANNEL_SECRET;
+    const channelSecret = process.env.LINE_CHANNEL_SECRET?.trim();
 
     try {
         const rawBody = await req.text();
         const signature = req.headers.get('x-line-signature');
+        console.log('[LINE Webhook] Received request. Has signature:', Boolean(signature));
 
         // Verify LINE signature if channel secret is configured
         if (channelSecret) {
             const isValid = validateLineSignature(rawBody, signature, channelSecret);
             if (!isValid) {
-                console.warn('[LINE Webhook] Invalid signature received');
+                console.warn('[LINE Webhook] Invalid signature received. Check LINE_CHANNEL_SECRET');
                 return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
             }
         }
@@ -35,11 +36,13 @@ export async function POST(req: NextRequest) {
         }
 
         const events = payload.events || [];
+        console.log('[LINE Webhook] Event count:', events.length);
 
         // Process all webhook events concurrently
         const eventPromises = events.map(async event => {
             try {
                 if (event.type === 'message' && event.message?.type === 'text') {
+                    console.log('[LINE Webhook] Received message:', event.message.text);
                     await handleLineMessageEvent(event);
                 }
             } catch (eventErr) {

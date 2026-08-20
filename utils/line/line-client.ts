@@ -13,9 +13,10 @@ export function validateLineSignature(
 ): boolean {
     if (!signature || !channelSecret) return false;
 
+    const secret = channelSecret.trim();
     const hash = crypto
-        .createHmac('sha256', channelSecret)
-        .update(body)
+        .createHmac('sha256', secret)
+        .update(Buffer.from(body, 'utf-8'))
         .digest('base64');
 
     return hash === signature;
@@ -28,13 +29,14 @@ export async function replyLineMessage(
     replyToken: string,
     messages: LineMessage[]
 ): Promise<boolean> {
-    const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const accessToken = process.env.LINE_CHANNEL_ACCESS_TOKEN?.trim();
     if (!accessToken) {
-        console.error('[LINE Client] LINE_CHANNEL_ACCESS_TOKEN is not configured');
+        console.error('[LINE Client] LINE_CHANNEL_ACCESS_TOKEN is not configured in environment');
         return false;
     }
 
     try {
+        console.log('[LINE Client] Sending reply to LINE with token:', replyToken.slice(0, 8) + '...');
         const response = await fetch(LINE_REPLY_URL, {
             method: 'POST',
             headers: {
@@ -49,13 +51,14 @@ export async function replyLineMessage(
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error('[LINE Client] Reply failed:', response.status, errorText);
+            console.error('[LINE Client] Reply failed with status:', response.status, errorText);
             return false;
         }
 
+        console.log('[LINE Client] Reply sent successfully!');
         return true;
     } catch (err) {
-        console.error('[LINE Client] Error replying:', err);
+        console.error('[LINE Client] Network error replying:', err);
         return false;
     }
 }
