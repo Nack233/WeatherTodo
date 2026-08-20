@@ -38,7 +38,7 @@ import MascotLineWidget from '@/app/components/MascotLineWidget';
 
 // Icons
 import { 
-    LayoutDashboard, Home, CloudSun, CheckSquare, 
+    Home, CloudSun, CheckSquare, 
     Calendar as CalendarIcon, Wallet, MapPin, 
     Moon, Sun, LogOut 
 } from 'lucide-react';
@@ -147,8 +147,9 @@ export default function DashboardPage() {
             {/* Sidebar Navigation (Desktop) */}
             <aside className="sidebar">
                 <div className="brand">
-                    <LayoutDashboard className="brand-icon" />
-                    <span className="brand-name">Personal Dashboard</span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/logo-daybase.png" alt="Day Base" className="brand-logo-img" />
+                    <span className="brand-name">Day Base</span>
                 </div>
                 <nav className="nav-menu">
                     <button 

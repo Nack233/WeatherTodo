@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../providers';
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
-import { LayoutDashboard, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
     const { user, register, isLoading } = useAuth();
@@ -76,8 +76,9 @@ export default function RegisterPage() {
             <div className="card auth-card">
                 <div className="auth-header">
                     <div className="auth-logo">
-                        <LayoutDashboard />
-                        <span>Personal Dashboard</span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/logo-daybase.png" alt="Day Base" className="auth-logo-img" />
+                        <span>Day Base</span>
                     </div>
                     <p>สมัครสมาชิกเพื่อเข้าใช้งานระบบแดชบอร์ด</p>
                 </div>

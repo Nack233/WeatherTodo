@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../providers';
 import { GoogleAuthButton } from '../components/GoogleAuthButton';
-import { LayoutDashboard, LogIn, AlertCircle } from 'lucide-react';
+import { LogIn, AlertCircle } from 'lucide-react';
 
 function LoginForm() {
     const { user, login, isLoading } = useAuth();
@@ -68,8 +68,9 @@ function LoginForm() {
             <div className="card auth-card">
                 <div className="auth-header">
                     <div className="auth-logo">
-                        <LayoutDashboard />
-                        <span>Personal Dashboard</span>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src="/logo-daybase.png" alt="Day Base" className="auth-logo-img" />
+                        <span>Day Base</span>
                     </div>
                     <p>ระบบแดชบอร์ดสภาพอากาศและเครื่องมือช่วยเหลือ</p>
                 </div>

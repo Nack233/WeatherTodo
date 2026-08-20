@@ -15,8 +15,13 @@ const prompt = Prompt({
 });
 
 export const metadata: Metadata = {
-  title: "Personal Dashboard",
-  description: "แดชบอร์ดสภาพอากาศและเครื่องมือช่วยเหลือส่วนบุคคล",
+  title: "Day Base",
+  description: "แดชบอร์ดสภาพอากาศและเครื่องมือช่วยเหลือส่วนบุคคล - Day Base",
+  icons: {
+    icon: "/logo-daybase.png",
+    shortcut: "/logo-daybase.png",
+    apple: "/logo-daybase.png",
+  },
 };
 
 export default function RootLayout({
