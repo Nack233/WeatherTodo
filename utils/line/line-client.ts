@@ -11,7 +11,10 @@ export function validateLineSignature(
     signature: string | null,
     channelSecret: string
 ): boolean {
-    if (!signature || !channelSecret) return false;
+    if (!signature || !channelSecret) {
+        console.warn('[validateLineSignature] Missing signature or channelSecret');
+        return false;
+    }
 
     const secret = channelSecret.trim();
     const hash = crypto
@@ -19,7 +22,12 @@ export function validateLineSignature(
         .update(Buffer.from(body, 'utf-8'))
         .digest('base64');
 
-    return hash === signature;
+    const matches = hash === signature;
+    if (!matches) {
+        console.warn(`[Signature Mismatch] Secret Length: ${secret.length} (Expected: 32 chars). Has quotes?: ${secret.startsWith('"') || secret.startsWith("'")}. Signature length: ${signature.length}`);
+    }
+
+    return matches;
 }
 
 /**
