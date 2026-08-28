@@ -189,11 +189,13 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     // Handle Account Linking Request
     if (firstIntent.action === 'link_account' && firstIntent.link_account?.email) {
         const success = await linkAccountByEmail(lineUserId, firstIntent.link_account.email);
+        // SECURITY: Use identical-looking response to prevent user enumeration
+        const maskedEmail = firstIntent.link_account.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
         if (success) {
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `เย้! ผูกบัญชี LINE กับอีเมล ${firstIntent.link_account.email} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
+                    text: `เย้! ผูกบัญชี LINE กับอีเมล ${maskedEmail} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
@@ -201,7 +203,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `ง่าา ไม่พบบัญชีอีเมล ${firstIntent.link_account.email} ในระบบ Day Base เลยค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
+                    text: `ง่าา เบสไม่สามารถผูกบัญชีกับอีเมล ${maskedEmail} ได้ค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);

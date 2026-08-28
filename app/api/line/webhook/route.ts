@@ -14,18 +14,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
     const channelSecret = (process.env.LINE_CHANNEL_SECRET || process.env.LINE_CHANNEL__SECRET)?.trim();
 
+    // SECURITY: Fail-closed — refuse to process webhooks without signature verification
+    if (!channelSecret) {
+        console.error('[LINE Webhook] LINE_CHANNEL_SECRET is not configured. Rejecting all requests.');
+        return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+    }
+
     try {
         const rawBody = await req.text();
         const signature = req.headers.get('x-line-signature');
         console.log('[LINE Webhook] Received request. Has signature:', Boolean(signature));
 
-        // Verify LINE signature if channel secret is configured
-        if (channelSecret) {
-            const isValid = validateLineSignature(rawBody, signature, channelSecret);
-            if (!isValid) {
-                console.warn('[LINE Webhook] Invalid signature received. Check LINE_CHANNEL_SECRET');
-                return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
-            }
+        // Verify LINE signature (always enforced)
+        const isValid = validateLineSignature(rawBody, signature, channelSecret);
+        if (!isValid) {
+            console.warn('[LINE Webhook] Invalid signature received. Check LINE_CHANNEL_SECRET');
+            return NextResponse.json({ error: 'Invalid signature' }, { status: 401 });
         }
 
         let payload: LineWebhookPayload;

@@ -25,9 +25,12 @@ export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: 
 
 ให้สรุปและให้คำแนะนำแบบสั้นกระชับ อ่านง่าย`;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`, {
+        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-goog-api-key': apiKey,
+            },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }]
             }),
