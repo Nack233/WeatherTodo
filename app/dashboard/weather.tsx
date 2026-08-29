@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { LocationPickerModal, LocationChips } from './location-picker';
 import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
+import { getWeatherMeta } from '@/utils/weather-codes';
 
 // ============================================================
 // Types
@@ -95,32 +96,6 @@ export default function Weather() {
         setLocations(locs);
         setActiveId(loadActiveId(locs));
     }, []);
-
-    const weatherCodes: Record<number, { text: string; icon: string }> = {
-        0: { text: 'ท้องฟ้าโปร่ง', icon: 'sun' },
-        1: { text: 'ท้องฟ้าโปร่งส่วนใหญ่', icon: 'cloud-sun' },
-        2: { text: 'มีเมฆบางส่วน', icon: 'cloud-sun' },
-        3: { text: 'ท้องฟ้าครึ้มมีเมฆหนา', icon: 'cloud' },
-        45: { text: 'มีหมอกจัด', icon: 'cloud-fog' },
-        48: { text: 'มีหมอกน้ำค้างแข็ง', icon: 'cloud-fog' },
-        71: { text: 'ฝนตกปรอยๆ เล็กน้อย', icon: 'cloud-drizzle' },
-        51: { text: 'ฝนตกปรอยๆ เล็กน้อย', icon: 'cloud-drizzle' },
-        53: { text: 'ฝนตกปรอยๆ ปานกลาง', icon: 'cloud-drizzle' },
-        55: { text: 'ฝนตกปรอยๆ หนาแน่น', icon: 'cloud-drizzle' },
-        61: { text: 'ฝนตกเล็กน้อย', icon: 'cloud-rain' },
-        63: { text: 'ฝนตกปานกลาง', icon: 'cloud-rain' },
-        65: { text: 'ฝนตกหนัก', icon: 'cloud-rain' },
-        80: { text: 'ฝนไล่ช้างตกเบาบาง', icon: 'cloud-rain' },
-        81: { text: 'ฝนไล่ช้างตกปานกลาง', icon: 'cloud-rain' },
-        82: { text: 'ฝนไล่ช้างตกหนักมาก', icon: 'cloud-lightning' },
-        95: { text: 'พายุฝนฟ้าคะนอง', icon: 'cloud-lightning' },
-        96: { text: 'พายุฝนฟ้าคะนองมีลูกเห็บตกเล็กน้อย', icon: 'cloud-lightning' },
-        99: { text: 'พายุฝนฟ้าคะนองมีลูกเห็บตกหนัก', icon: 'cloud-lightning' }
-    };
-
-    const getWeatherMeta = (code: number) => {
-        return weatherCodes[code] || { text: 'สภาพอากาศทั่วไป', icon: 'cloud-sun' };
-    };
 
     const renderWeatherIcon = (iconName: string, className?: string) => {
         switch(iconName) {
@@ -263,6 +238,9 @@ export default function Weather() {
         setLocations(updated);
         saveLocations(updated);
         setActiveId(loc.id);
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('weather_location_change'));
+        }
     };
 
     const handleRemoveLocation = (id: string) => {
@@ -272,6 +250,9 @@ export default function Weather() {
             setLocations(DEFAULT_LOCATIONS);
             saveLocations(DEFAULT_LOCATIONS);
             setActiveId(DEFAULT_LOCATIONS[0].id);
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('weather_location_change'));
+            }
             return;
         }
         setLocations(updated);
@@ -279,10 +260,16 @@ export default function Weather() {
         if (activeId === id) {
             setActiveId(updated[0].id);
         }
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('weather_location_change'));
+        }
     };
 
     const handleSelectLocation = (id: string) => {
         setActiveId(id);
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('weather_location_change'));
+        }
     };
 
     const activeLoc = locations.find((l) => l.id === activeId);

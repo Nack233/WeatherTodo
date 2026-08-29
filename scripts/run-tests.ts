@@ -49,13 +49,14 @@ requiredFiles.forEach((relPath) => {
 // --------------------------------------------------
 console.log('\n📌 Test Suite 2: Weather Cache Integrity Checks');
 
-const isValidWeatherCache = (data: any): boolean => {
+const isValidWeatherCache = (data: unknown): boolean => {
     if (!data || typeof data !== 'object') return false;
+    const d = data as Record<string, unknown>;
     return Boolean(
-        data.current &&
-        typeof data.current.temperature_2m === 'number' &&
-        data.hourly && Array.isArray(data.hourly.time) && data.hourly.time.length > 0 &&
-        data.daily && Array.isArray(data.daily.time) && data.daily.time.length > 0
+        d.current &&
+        typeof (d.current as Record<string, unknown>).temperature_2m === 'number' &&
+        d.hourly && Array.isArray((d.hourly as Record<string, unknown>).time) && (d.hourly as { time: unknown[] }).time.length > 0 &&
+        d.daily && Array.isArray((d.daily as Record<string, unknown>).time) && (d.daily as { time: unknown[] }).time.length > 0
     );
 };
 

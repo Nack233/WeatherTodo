@@ -13,7 +13,7 @@ export async function getTodos(): Promise<ActionResult<Todo[]>> {
 
         const { data, error } = await supabase
             .from('todos')
-            .select('*')
+            .select('id, user_id, title, description, completed, priority, due_date, created_at, updated_at')
             .order('completed', { ascending: true })
             .order('due_date', { ascending: true, nullsFirst: false })
             .order('created_at', { ascending: false });

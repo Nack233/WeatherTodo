@@ -16,7 +16,7 @@ export function createClient() {
                 signInWithOAuth: async () => ({ error: new Error('Supabase environment variables are missing') }),
                 signOut: async () => ({}),
             },
-        } as any;
+        } as unknown as ReturnType<typeof createBrowserClient>;
     }
 
     return createBrowserClient(url, key);

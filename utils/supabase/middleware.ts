@@ -38,6 +38,13 @@ export async function updateSession(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
 
+    // Redirect root path / immediately to dashboard or login
+    if (pathname === '/') {
+        const url = request.nextUrl.clone();
+        url.pathname = user ? '/dashboard' : '/login';
+        return NextResponse.redirect(url);
+    }
+
     // Redirect unauthenticated users away from protected routes
     if (!user && pathname.startsWith('/dashboard')) {
         const url = request.nextUrl.clone();

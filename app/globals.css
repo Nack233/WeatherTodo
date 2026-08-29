@@ -218,7 +218,7 @@ body {
     font-weight: 500;
     cursor: pointer;
     text-align: left;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: color 0.25s ease, background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
     position: relative;
     overflow: hidden;
     width: 100%;
@@ -292,7 +292,7 @@ body {
     font-weight: 500;
     color: #fca5a5;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
 }
 .btn-logout:hover {
     background: rgba(239, 68, 68, 0.25);
@@ -306,7 +306,7 @@ body {
     padding: 2.5rem;
     min-height: 100vh;
     padding-bottom: 6rem; /* Space for mobile nav if it wraps */
-    transition: all 0.4s ease;
+    transition: padding 0.3s ease, margin-left 0.3s ease;
 }
 
 /* Bottom Nav (Mobile Only) */
@@ -358,7 +358,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
 .header-btn:hover {
     background: rgba(255, 255, 255, 0.1);
@@ -443,7 +443,7 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.25s ease, border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease, color 0.25s ease;
 }
 .btn:hover {
     background: rgba(255, 255, 255, 0.1);

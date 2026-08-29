@@ -13,7 +13,7 @@ export async function getCalendarEvents(): Promise<ActionResult<CalendarEvent[]>
 
         const { data, error } = await supabase
             .from('calendar_events')
-            .select('*')
+            .select('id, user_id, title, description, start_date, end_date, all_day, color, created_at, updated_at')
             .order('start_date', { ascending: true });
 
         if (error) {

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useAuth, useTheme } from '../providers';
 import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
@@ -34,7 +35,8 @@ const Calendar   = dynamic(() => import('./calendar'),    { loading: () => <TabS
 const Tracker    = dynamic(() => import('./tracker'),     { loading: () => <TabSkeleton /> });
 const FuelPrices = dynamic(() => import('./fuel-prices'), { loading: () => <TabSkeleton /> });
 
-import MascotLineWidget from '@/app/components/MascotLineWidget';
+// Floating assistant widget lazy loaded on client
+const MascotLineWidget = dynamic(() => import('@/app/components/MascotLineWidget'), { ssr: false });
 
 // Icons
 import { 
@@ -52,7 +54,7 @@ export default function DashboardPage() {
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
     const [locationBadge, setLocationBadge] = useState<string>('ไทย');
 
-    // Dynamic location badge from localStorage
+    // Dynamic location badge from localStorage (event-driven, no polling)
     useEffect(() => {
         const updateBadge = () => {
             try {
@@ -70,10 +72,13 @@ export default function DashboardPage() {
             setLocationBadge(`${DEFAULT_LOCATIONS[0].province}, ไทย`);
         };
         updateBadge();
-        // Listen for storage changes (from weather tab)
+        // Listen for storage and custom weather location change events
         window.addEventListener('storage', updateBadge);
-        const interval = setInterval(updateBadge, 3000);
-        return () => { window.removeEventListener('storage', updateBadge); clearInterval(interval); };
+        window.addEventListener('weather_location_change', updateBadge);
+        return () => {
+            window.removeEventListener('storage', updateBadge);
+            window.removeEventListener('weather_location_change', updateBadge);
+        };
     }, []);
 
     // Protected Route Verification
@@ -147,8 +152,7 @@ export default function DashboardPage() {
             {/* Sidebar Navigation (Desktop) */}
             <aside className="sidebar">
                 <div className="brand">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src="/logo-daybase.png" alt="Day Base" className="brand-logo-img" />
+                    <Image src="/logo-daybase.png" alt="Day Base" width={32} height={32} className="brand-logo-img" priority />
                     <span className="brand-name">Day Base</span>
                 </div>
                 <nav className="nav-menu">

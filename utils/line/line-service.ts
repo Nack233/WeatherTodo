@@ -8,7 +8,7 @@ import {
     createHelpFlex,
     DEFAULT_QUICK_REPLY,
 } from './line-client';
-import type { LineWebhookEvent, LineMessage, AiIntentResult, AiIntentResponse } from '@/types/line';
+import type { LineWebhookEvent, AiIntentResult } from '@/types/line';
 
 const DEFAULT_LOCATION = { name: 'จันทบุรี', lat: 12.6114, lon: 102.1039 };
 

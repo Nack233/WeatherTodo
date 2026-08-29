@@ -8,6 +8,7 @@ import { getCalendarEvents } from '@/app/actions/calendar-actions';
 import { getExpenses } from '@/app/actions/tracker-actions';
 import { useToast } from '@/app/components/Toast';
 import AiBriefingCard from './ai-briefing-card';
+import { getWeatherMeta } from '@/utils/weather-codes';
 
 type CalendarEventSummary = {
     id: string;
@@ -76,31 +77,6 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
     const [balanceText, setBalanceText] = useState<string>('฿0.00');
     const [incomeText, setIncomeText] = useState<string>('฿0.00');
     const [expenseText, setExpenseText] = useState<string>('฿0.00');
-
-    const getWeatherMeta = (code: number) => {
-        const metaMap: Record<number, { text: string; icon: string }> = {
-            0: { text: 'ท้องฟ้าโปร่ง', icon: 'sun' },
-            1: { text: 'ท้องฟ้าโปร่งเป็นส่วนใหญ่', icon: 'cloud-sun' },
-            2: { text: 'มีเมฆบางส่วน', icon: 'cloud-sun' },
-            3: { text: 'ท้องฟ้าครึ้มมีเมฆหนา', icon: 'cloud' },
-            45: { text: 'มีหมอกจัด', icon: 'cloud-fog' },
-            48: { text: 'มีหมอกน้ำค้างแข็ง', icon: 'cloud-fog' },
-            51: { text: 'ฝนตกปรอยๆ', icon: 'cloud-drizzle' },
-            53: { text: 'ฝนตกปรอยๆ ปานกลาง', icon: 'cloud-drizzle' },
-            55: { text: 'ฝนตกปรอยๆ หนาแน่น', icon: 'cloud-drizzle' },
-            61: { text: 'ฝนตกเล็กน้อย', icon: 'cloud-rain' },
-            63: { text: 'ฝนตกปานกลาง', icon: 'cloud-rain' },
-            65: { text: 'ฝนตกหนัก', icon: 'cloud-rain' },
-            80: { text: 'ฝนไล่ช้างตก', icon: 'cloud-rain' },
-            81: { text: 'ฝนไล่ช้างตกปานกลาง', icon: 'cloud-rain' },
-            82: { text: 'ฝนไล่ช้างตกหนัก', icon: 'cloud-lightning' },
-            95: { text: 'พายุฝนฟ้าคะนอง', icon: 'cloud-lightning' },
-            96: { text: 'พายุฝนฟ้าคะนองมีลูกเห็บตกเล็กน้อย', icon: 'cloud-lightning' },
-            99: { text: 'พายุฝนฟ้าคะนองมีลูกเห็บตกหนัก', icon: 'cloud-lightning' }
-        };
-
-        return metaMap[code] || { text: 'สภาพอากาศทั่วไป', icon: 'cloud-sun' };
-    };
 
     const renderWeatherIcon = (iconName: string) => {
         switch (iconName) {

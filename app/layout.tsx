@@ -11,7 +11,7 @@ const inter = Inter({
 const prompt = Prompt({
   variable: "--font-prompt",
   subsets: ["thai"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
