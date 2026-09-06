@@ -151,9 +151,14 @@ export default function DashboardPage() {
         <div className="app-container">
             {/* Sidebar Navigation (Desktop) */}
             <aside className="sidebar">
-                <div className="brand">
-                    <Image src="/logo-daybase.png" alt="Day Base" width={32} height={32} className="brand-logo-img" priority />
-                    <span className="brand-name">Day Base</span>
+                <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
+                    <Image src="/logo-daybase.png" alt="Day Base" width={34} height={34} className="brand-logo-img" priority />
+                    <div>
+                        <span className="brand-name" style={{ fontSize: '1.25rem', fontWeight: 800 }}>Day Base</span>
+                        <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--accent-cyan)', fontWeight: 700, letterSpacing: '1px', marginTop: '-2px' }}>
+                            DAILY WORKSPACE
+                        </span>
+                    </div>
                 </div>
                 <nav className="nav-menu">
                     <button 
@@ -200,11 +205,14 @@ export default function DashboardPage() {
                     </button>
                 </nav>
                 <div className="sidebar-footer">
-                    <div className="location-badge">
-                        <MapPin />
-                        <span>{locationBadge}</span>
+                    <div className="location-badge" style={{ borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                            <MapPin size={15} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                            <span style={{ fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{locationBadge}</span>
+                        </div>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)', flexShrink: 0 }} />
                     </div>
-                    <button className="btn-logout" onClick={handleLogout}>
+                    <button className="btn-logout" onClick={handleLogout} style={{ borderRadius: '12px' }}>
                         <LogOut size={16} />
                         <span>ออกจากระบบ</span>
                     </button>
@@ -214,22 +222,26 @@ export default function DashboardPage() {
             {/* Main Content Area */}
             <main className="main-content">
                 {/* Header */}
-                <header className="main-header">
+                <header className="main-header" style={{ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
                     <div className="header-info">
-                        <h1 id="page-title">{getPageTitle()}</h1>
-                        <p id="current-date-display">{currentDateStr}</p>
+                        <h1 id="page-title" style={{ fontWeight: 800, letterSpacing: '-0.5px' }}>{getPageTitle()}</h1>
+                        <p id="current-date-display" style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{currentDateStr}</p>
                     </div>
                     <div className="header-actions">
-                        <div className="header-username">
-                            สวัสดี, <span>{user.name}</span>
+                        <div className="header-username" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.4rem 0.9rem', borderRadius: '999px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)' }}>
+                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-cyan), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
+                                {user.name ? user.name.slice(0, 1).toUpperCase() : 'U'}
+                            </div>
+                            <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>สวัสดี, {user.name}</span>
                         </div>
                         <button 
                             id="theme-toggle" 
                             className="header-btn" 
                             onClick={toggleTheme} 
                             title={theme === 'dark' ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด'}
+                            style={{ borderRadius: '12px', border: '1px solid var(--border-color)' }}
                         >
-                            {theme === 'dark' ? <Sun /> : <Moon />}
+                            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
                     </div>
                 </header>

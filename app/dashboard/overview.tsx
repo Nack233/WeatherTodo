@@ -275,13 +275,17 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
 
             <div className="dashboard-grid">
             {/* Quick Weather Widget */}
-            <div className="card weather-quick-card ripple" onClick={() => setActiveTab('weather')}>
-                <div className="card-header">
-                    <span className="card-tag">อากาศวันนี้ {user?.name ? `· ${user.name}` : ''}</span>
+            <div className="card glass-effect weather-quick-card ripple" onClick={() => setActiveTab('weather')} style={{ cursor: 'pointer', position: 'relative', overflow: 'hidden' }}>
+                <div className="ambient-weather-glow ambient-glow-sun" style={{ width: '180px', height: '180px', top: '-20px', right: '-20px', opacity: 0.2 }} />
+                <div className="card-header" style={{ position: 'relative', zIndex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="card-tag">สภาพอากาศวันนี้</span>
+                        <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', fontWeight: 700 }}>LIVE</span>
+                    </div>
                     <CloudRain className="card-icon-header text-cyan" />
                 </div>
                 {isWeatherLoading ? (
-                    <div className="weather-quick-body">
+                    <div className="weather-quick-body" style={{ position: 'relative', zIndex: 1 }}>
                         <div className="weather-quick-info" style={{ width: '100%' }}>
                             <div className="skeleton-box skeleton-title" style={{ width: '90px', marginBottom: '0.6rem' }} />
                             <div className="skeleton-box skeleton-text" style={{ width: '130px', marginBottom: '0.4rem' }} />
@@ -292,11 +296,11 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                         </div>
                     </div>
                 ) : (
-                    <div className="weather-quick-body">
+                    <div className="weather-quick-body" style={{ position: 'relative', zIndex: 1 }}>
                         <div className="weather-quick-info">
-                            <h3>{weatherTemp}</h3>
-                            <p>{weatherDesc}</p>
-                            <span className="location-sub">ตำบลโป่งน้ำร้อน · ข้อมูลสดจาก Open-Meteo</span>
+                            <h3 style={{ fontSize: '2.8rem', fontWeight: 800, letterSpacing: '-1px' }}>{weatherTemp}</h3>
+                            <p style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--accent-cyan)' }}>{weatherDesc}</p>
+                            <span className="location-sub">พิกัดใช้งานปัจจุบัน · แตะเพื่อดูรายละเอียด →</span>
                         </div>
                         <div className="weather-quick-graphic">
                             {renderWeatherIcon(weatherIcon)}
@@ -306,9 +310,14 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             </div>
 
             {/* To-Do Summary Widget */}
-            <div className="card todo-quick-card ripple" onClick={() => setActiveTab('todo')}>
+            <div className="card glass-effect todo-quick-card ripple" onClick={() => setActiveTab('todo')} style={{ cursor: 'pointer' }}>
                 <div className="card-header">
-                    <span className="card-tag">งานค้างของคุณ</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span className="card-tag">งานค้างของคุณ</span>
+                        <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: '999px', background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)', fontWeight: 700 }}>
+                            {todoCount}
+                        </span>
+                    </div>
                     <CheckSquare className="card-icon-header text-purple" />
                 </div>
                 {isTodoLoading ? (
@@ -322,19 +331,19 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     <div className="todo-quick-body">
                         <div className="todo-progress-container">
                             <div className="todo-progress-text">
-                                <span>{todoCount}</span>
-                                <span>{todoPercent}%</span>
+                                <span style={{ fontWeight: 600 }}>ความคืบหน้ารวม</span>
+                                <span style={{ fontWeight: 700, color: 'var(--accent-purple)' }}>{todoPercent}%</span>
                             </div>
-                            <div className="progress-bar">
-                                <div className="progress" style={{ width: `${todoPercent}%` }}></div>
+                            <div className="progress-bar" style={{ height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '999px' }}>
+                                <div className="progress" style={{ width: `${todoPercent}%`, borderRadius: '999px', background: 'linear-gradient(90deg, var(--accent-purple), var(--accent-cyan))' }}></div>
                             </div>
                         </div>
                         <ul className="quick-list">
                             {todoList.length === 0 ? (
-                                <li className="empty-state-text">ไม่มีงานที่กำลังดำเนินการ</li>
+                                <li className="empty-state-text" style={{ padding: '0.75rem' }}>ไม่มีงานที่กำลังดำเนินการ 🎉</li>
                             ) : (
                                 todoList.map((t, idx) => (
-                                    <li key={idx}>{t}</li>
+                                    <li key={idx} style={{ borderRadius: '10px', padding: '0.65rem 0.85rem' }}>{t}</li>
                                 ))
                             )}
                         </ul>
@@ -343,7 +352,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             </div>
 
             {/* Calendar Summary Widget */}
-            <div className="card calendar-quick-card ripple" onClick={() => setActiveTab('calendar')}>
+            <div className="card glass-effect calendar-quick-card ripple" onClick={() => setActiveTab('calendar')} style={{ cursor: 'pointer' }}>
                 <div className="card-header">
                     <span className="card-tag">กิจกรรมเร็วๆ นี้</span>
                     <Calendar className="card-icon-header text-green" />
@@ -359,15 +368,15 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     <div className="calendar-quick-body">
                         <div className="quick-event-today">
                             {todayEvents.length === 0 ? (
-                                <div className="empty-state-text">ไม่มีกิจกรรมที่บันทึกไว้</div>
+                                <div className="empty-state-text" style={{ padding: '1rem 0' }}>ไม่มีกิจกรรมที่บันทึกไว้</div>
                             ) : (
                                 todayEvents.map((ev, idx) => (
                                     <div 
                                         key={ev.id || idx} 
                                         className="quick-event-item" 
-                                        style={{ borderLeft: `3px solid ${getEventBorderColor(ev.tag)}` }}
+                                        style={{ borderLeft: `3.5px solid ${getEventBorderColor(ev.tag)}`, borderRadius: '10px', padding: '0.7rem 0.9rem' }}
                                     >
-                                        <span className="title">{ev.title}</span>
+                                        <span className="title" style={{ fontWeight: 600 }}>{ev.title}</span>
                                         <span className="time">{ev.time}</span>
                                     </div>
                                 ))
@@ -378,7 +387,7 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             </div>
 
             {/* Finance Summary Widget */}
-            <div className="card finance-quick-card ripple" onClick={() => setActiveTab('tracker')}>
+            <div className="card glass-effect finance-quick-card ripple" onClick={() => setActiveTab('tracker')} style={{ cursor: 'pointer' }}>
                 <div className="card-header">
                     <span className="card-tag">กระเป๋าเงินวันนี้</span>
                     <Wallet className="card-icon-header text-yellow" />
@@ -393,15 +402,15 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
                     </div>
                 ) : (
                     <div className="finance-quick-body">
-                        <div className="balance-amount">{balanceText}</div>
+                        <div className="balance-amount" style={{ fontSize: '2.4rem', fontWeight: 800 }}>{balanceText}</div>
                         <div className="finance-quick-row">
-                            <div className="finance-mini-stat income">
-                                <span className="label"><TrendingUp size={12} /> รายรับ</span>
-                                <span className="val">{incomeText}</span>
+                            <div className="finance-mini-stat income" style={{ borderRadius: '12px' }}>
+                                <span className="label"><TrendingUp size={13} /> รายรับ</span>
+                                <span className="val" style={{ color: 'var(--accent-green)', fontWeight: 700 }}>{incomeText}</span>
                             </div>
-                            <div className="finance-mini-stat expense">
-                                <span className="label"><TrendingDown size={12} /> รายจ่าย</span>
-                                <span className="val">{expenseText}</span>
+                            <div className="finance-mini-stat expense" style={{ borderRadius: '12px' }}>
+                                <span className="label"><TrendingDown size={13} /> รายจ่าย</span>
+                                <span className="val" style={{ color: 'var(--accent-red)', fontWeight: 700 }}>{expenseText}</span>
                             </div>
                         </div>
                     </div>

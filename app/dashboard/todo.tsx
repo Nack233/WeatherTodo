@@ -203,8 +203,6 @@ export default function Todo() {
             const priorityOrder: Record<Priority, number> = { high: 0, medium: 1, low: 2 };
             if (a.priority !== b.priority) return priorityOrder[a.priority] - priorityOrder[b.priority];
             if (a.due_date && b.due_date) return a.due_date.localeCompare(b.due_date);
-            if (a.due_date) return -1;
-            if (b.due_date) return 1;
             return 0;
         });
 
@@ -212,17 +210,17 @@ export default function Todo() {
     const completedCount = todos.filter(t => t.completed).length;
     const progressPercent = total === 0 ? 0 : Math.round((completedCount / total) * 100);
 
-    // ==========================================
-    // RENDER
-    // ==========================================
     return (
         <div className="todo-layout">
-            {/* ── Add Task Card ── */}
-            <div className="card todo-form-card">
-                <h3 className="section-title">เพิ่มรายการงานใหม่</h3>
+            <div className="card glass-effect todo-form-card" style={{ borderRadius: '20px' }}>
+                <h3 className="section-title">
+                    <span style={{ background: 'linear-gradient(135deg, var(--text-primary), var(--accent-purple))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontWeight: 700 }}>
+                        เพิ่มรายการงานใหม่
+                    </span>
+                </h3>
                 <form onSubmit={handleAddTask}>
                     <div className="form-group">
-                        <label htmlFor="todo-title">ชื่องาน / กิจกรรม</label>
+                        <label htmlFor="todo-title" style={{ fontSize: '0.85rem', fontWeight: 600 }}>ชื่องาน / กิจกรรม</label>
                         <input
                             type="text"
                             id="todo-title"
@@ -231,14 +229,15 @@ export default function Todo() {
                             onChange={e => setTitle(e.target.value)}
                             required
                             disabled={isSubmitting}
+                            style={{ borderRadius: '12px' }}
                         />
                     </div>
 
-                    {/* Advanced toggle */}
                     <button
                         type="button"
                         className="todo-advanced-toggle"
                         onClick={() => setShowAdvanced(v => !v)}
+                        style={{ borderRadius: '8px' }}
                     >
                         {showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                         {showAdvanced ? 'ซ่อนรายละเอียดเพิ่มเติม' : 'เพิ่มรายละเอียด (ไม่บังคับ)'}
@@ -247,7 +246,7 @@ export default function Todo() {
                     {showAdvanced && (
                         <div className="todo-advanced-fields">
                             <div className="form-group">
-                                <label htmlFor="todo-desc">รายละเอียด</label>
+                                <label htmlFor="todo-desc" style={{ fontSize: '0.85rem', fontWeight: 600 }}>รายละเอียด</label>
                                 <input
                                     type="text"
                                     id="todo-desc"
@@ -255,59 +254,76 @@ export default function Todo() {
                                     value={description}
                                     onChange={e => setDescription(e.target.value)}
                                     disabled={isSubmitting}
+                                    style={{ borderRadius: '12px' }}
                                 />
+                            </div>
+
+                            <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div className="form-group">
+                                    <label htmlFor="todo-priority" style={{ fontSize: '0.85rem', fontWeight: 600 }}>ความสำคัญ</label>
+                                    <select
+                                        id="todo-priority"
+                                        value={priority}
+                                        onChange={e => setPriority(e.target.value as Priority)}
+                                        disabled={isSubmitting}
+                                        style={{ borderRadius: '12px' }}
+                                    >
+                                        <option value="low">ต่ำ (Low)</option>
+                                        <option value="medium">ปานกลาง (Medium)</option>
+                                        <option value="high">สูง (High)</option>
+                                    </select>
+                                </div>
+
+                                <div className="form-group">
+                                    <label htmlFor="todo-due" style={{ fontSize: '0.85rem', fontWeight: 600 }}>กำหนดส่ง</label>
+                                    <input
+                                        type="date"
+                                        id="todo-due"
+                                        value={dueDate}
+                                        onChange={e => setDueDate(e.target.value)}
+                                        disabled={isSubmitting}
+                                        style={{ borderRadius: '12px' }}
+                                    />
+                                </div>
                             </div>
                         </div>
                     )}
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label htmlFor="todo-priority">ความสำคัญ</label>
-                            <select
-                                id="todo-priority"
-                                value={priority}
-                                onChange={e => setPriority(e.target.value as Priority)}
-                                disabled={isSubmitting}
-                            >
-                                <option value="low">ต่ำ 🟢</option>
-                                <option value="medium">ปานกลาง 🟡</option>
-                                <option value="high">สูง 🔴</option>
-                            </select>
-                        </div>
-                        <div className="form-group">
-                            <label htmlFor="todo-due">กำหนดส่ง</label>
-                            <input
-                                type="date"
-                                id="todo-due"
-                                value={dueDate}
-                                onChange={e => setDueDate(e.target.value)}
-                                disabled={isSubmitting}
-                            />
-                        </div>
-                    </div>
 
                     <button
                         type="submit"
                         className="btn btn-primary btn-block"
                         disabled={isSubmitting || !title.trim()}
+                        style={{ marginTop: '1.25rem', borderRadius: '14px', padding: '0.85rem' }}
                     >
-                        {isSubmitting
-                            ? <><Loader2 size={18} className="spin" /> กำลังบันทึก...</>
-                            : <><Plus size={18} /> เพิ่มรายการ</>
-                        }
+                        {isSubmitting ? (
+                            <>
+                                <Loader2 size={16} className="spin" />
+                                <span>กำลังบันทึก...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={18} />
+                                <span>เพิ่มรายการ</span>
+                            </>
+                        )}
                     </button>
                 </form>
             </div>
 
-            {/* ── Tasks List Card ── */}
-            <div className="card todo-list-card">
-                <div className="todo-list-header">
-                    <h3 className="section-title">รายการงาน</h3>
-                    <div className="todo-filters">
+            <div className="card glass-effect todo-list-card" style={{ borderRadius: '20px' }}>
+                <div className="todo-list-header" style={{ flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <h3 className="section-title" style={{ margin: 0 }}>รายการงาน</h3>
+                        <span style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem', borderRadius: '999px', background: 'rgba(168, 85, 247, 0.15)', color: 'var(--accent-purple)', fontWeight: 700 }}>
+                            {completedCount}/{total}
+                        </span>
+                    </div>
+                    
+                    <div className="segmented-pill-bar">
                         {(['all', 'active', 'completed'] as const).map(f => (
                             <button
                                 key={f}
-                                className={`filter-btn ${filter === f ? 'active' : ''}`}
+                                className={`segmented-pill-btn ${filter === f ? 'active' : ''}`}
                                 onClick={() => setFilter(f)}
                             >
                                 {f === 'all' ? 'ทั้งหมด' : f === 'active' ? 'กำลังทำ' : 'เสร็จแล้ว'}
@@ -316,42 +332,31 @@ export default function Todo() {
                     </div>
                 </div>
 
-                {/* Progress bar */}
                 {total > 0 && (
-                    <div className="todo-progress-summary">
+                    <div className="todo-progress-summary" style={{ borderRadius: '14px', background: 'rgba(255, 255, 255, 0.02)' }}>
                         <div className="progress-details">
-                            <span>ความคืบหน้าภาพรวม</span>
-                            <strong>{completedCount}/{total} ({progressPercent}%)</strong>
+                            <span style={{ fontWeight: 500 }}>ความคืบหน้าภาพรวม</span>
+                            <strong style={{ color: 'var(--accent-purple)' }}>{completedCount}/{total} ({progressPercent}%)</strong>
                         </div>
-                        <div className="progress-bar">
-                            <div className="progress" style={{ width: `${progressPercent}%` }} />
+                        <div className="progress-bar" style={{ height: '8px', borderRadius: '999px', background: 'rgba(255, 255, 255, 0.06)' }}>
+                            <div className="progress" style={{ width: `${progressPercent}%`, borderRadius: '999px', background: 'linear-gradient(90deg, var(--accent-purple), var(--accent-cyan))' }} />
                         </div>
                     </div>
                 )}
 
-                {/* States */}
                 {isLoading ? (
                     <TodoSkeleton />
                 ) : fetchError ? (
                     <div className="alert-message error" style={{ margin: '1rem 0' }}>
                         <AlertCircle size={16} />
                         <span>{fetchError}</span>
-                        <button
-                            className="btn"
-                            style={{ marginLeft: 'auto', padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
-                            onClick={fetchTodos}
-                        >
-                            ลองอีกครั้ง
-                        </button>
+                        <button className="btn" style={{ marginLeft: 'auto' }} onClick={fetchTodos}>ลองอีกครั้ง</button>
                     </div>
                 ) : (
-                    <ul className="todo-list-items">
+                    <ul className="todo-list-items" style={{ gap: '0.85rem' }}>
                         {filteredTodos.length === 0 ? (
-                            <li className="empty-state-text">
-                                {filter === 'all'
-                                    ? 'ยังไม่มีรายการงาน กด "เพิ่มรายการ" เพื่อเริ่มต้น'
-                                    : 'ไม่มีรายการงานในหมวดหมู่นี้'
-                                }
+                            <li className="empty-state-text" style={{ padding: '2.5rem 0' }}>
+                                {filter === 'all' ? 'ยังไม่มีรายการงาน กด "เพิ่มรายการ" เพื่อเริ่มต้น 📝' : 'ไม่มีรายการงานในหมวดหมู่นี้'}
                             </li>
                         ) : (
                             filteredTodos.map(task => {
@@ -361,7 +366,7 @@ export default function Todo() {
                                 return (
                                     <li
                                         key={task.id}
-                                        className={`todo-item ${task.completed ? 'completed' : ''} ${overdue ? 'overdue-item' : ''}`}
+                                        className={`todo-card-interactive priority-${task.priority} ${task.completed ? 'completed' : ''} ${overdue ? 'overdue-item' : ''}`}
                                         style={{ opacity: isDeleting ? 0.5 : 1 }}
                                     >
                                         <div className="todo-item-left">
@@ -375,19 +380,18 @@ export default function Todo() {
                                                 <span className="checkmark" />
                                             </label>
                                             <div className="todo-item-info">
-                                                <span className="title">{task.title}</span>
+                                                <span className="title" style={{ fontWeight: 600 }}>{task.title}</span>
                                                 {task.description && (
-                                                    <span className="todo-desc">{task.description}</span>
+                                                    <span className="todo-desc" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{task.description}</span>
                                                 )}
-                                                <div className="todo-meta">
-                                                    <span className={`priority-badge ${PRIORITY_CLASS[task.priority]}`}>
+                                                <div className="todo-meta" style={{ marginTop: '0.35rem' }}>
+                                                    <span className={`priority-badge ${PRIORITY_CLASS[task.priority]}`} style={{ borderRadius: '6px' }}>
                                                         {PRIORITY_LABELS[task.priority]}
                                                     </span>
                                                     {task.due_date && (
                                                         <span className={`todo-due ${overdue ? 'overdue' : ''}`}>
                                                             <Calendar size={12} style={{ display: 'inline', marginRight: '2px', verticalAlign: 'middle' }} />
                                                             {getThaiDateLabel(task.due_date)}
-                                                            {overdue && ' (เลยกำหนด)'}
                                                         </span>
                                                     )}
                                                 </div>
@@ -398,6 +402,7 @@ export default function Todo() {
                                             onClick={() => handleDelete(task.id)}
                                             disabled={isDeleting || isToggling}
                                             title="ลบรายการ"
+                                            style={{ borderRadius: '10px' }}
                                         >
                                             {isDeleting
                                                 ? <Loader2 size={16} className="spin" />
