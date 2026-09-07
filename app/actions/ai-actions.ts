@@ -1,20 +1,12 @@
 'use server';
 
 import { BriefingInputData, generateDailyBriefing } from '@/utils/ai-briefing';
+import { callOpenRouterCompletion, OpenRouterChatMessage } from '@/utils/openrouter';
 
-export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: string; source: 'gemini' | 'synthesis' }> {
-    const apiKey = process.env.GEMINI_API_KEY;
+export type AiSourceType = 'gemini' | 'openrouter' | 'synthesis';
 
-    if (!apiKey) {
-        // Fallback to built-in smart synthesis engine if no API Key
-        return {
-            text: generateDailyBriefing(data),
-            source: 'synthesis'
-        };
-    }
-
-    try {
-        const prompt = `คุณคือ "น้องเบส" (Nong Base) มาสคอตสาวน้อยและผู้ช่วย AI ประจำตัวของระบบ Day Base แดชบอร์ด
+export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: string; source: AiSourceType }> {
+    const prompt = `คุณคือ "น้องเบส" (Nong Base) มาสคอตสาวน้อยและผู้ช่วย AI ประจำตัวของระบบ Day Base แดชบอร์ด
 บุคลิก: น่ารัก สดใส มีชีวิตชีวา เป็นกันเอง พูดจาสุภาพลงท้ายด้วย "ค่ะ/นะคะ" และคอยส่งพลังบวกให้ผู้ใช้เสมอ (แทนตัวเองว่า "น้องเบส" หรือ "เบส", เรียกผู้ใช้ว่า "${data.userName || 'คุณ'}")
 ช่วยเขียนบทสรุปภาพรวมประจำวันสั้นๆ (ความยาว 3-4 ประโยค) ในสไตล์ที่เป็นกันเอง สุภาพ มีพลังบวก และเป็นภาษาไทย
 โดยอ้างอิงจากข้อมูลล่าสุดดังต่อไปนี้:
@@ -26,29 +18,50 @@ export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: 
 
 ให้สรุปและให้คำแนะนำแบบสั้นกระชับ สดใส อ่านง่าย`;
 
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
-            },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            }),
-            next: { revalidate: 300 } // Cache for 5 minutes
-        });
+    // 1. Try Gemini 3.5 Flash Lite first
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+        try {
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': geminiKey,
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: prompt }] }]
+                }),
+                next: { revalidate: 300 } // Cache for 5 minutes
+            });
 
-        if (response.ok) {
-            const resData = await response.json();
-            const aiText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (aiText) {
-                return { text: aiText.trim(), source: 'gemini' };
+            if (response.ok) {
+                const resData = await response.json();
+                const aiText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText) {
+                    return { text: aiText.trim(), source: 'gemini' };
+                }
+            } else {
+                console.warn(`[AI Briefing] Gemini API returned ${response.status}. Switching to OpenRouter MiniMax M3...`);
             }
+        } catch (geminiErr) {
+            console.warn('[AI Briefing] Gemini request error. Switching to OpenRouter MiniMax M3...', geminiErr);
         }
-    } catch {
-        // Ignore API errors and fallback gracefully
     }
 
+    // 2. Fallback to OpenRouter MiniMax M3 (Free)
+    try {
+        const openRouterText = await callOpenRouterCompletion([
+            { role: 'user', content: prompt }
+        ], { temperature: 0.5 });
+
+        if (openRouterText) {
+            return { text: openRouterText, source: 'openrouter' };
+        }
+    } catch (openRouterErr) {
+        console.warn('[AI Briefing] OpenRouter fallback failed:', openRouterErr);
+    }
+
+    // 3. Fallback to local heuristic synthesis engine
     return {
         text: generateDailyBriefing(data),
         source: 'synthesis'
@@ -59,27 +72,17 @@ export async function chatWithNongBase(
     message: string,
     history: { sender: 'user' | 'bot'; text: string }[],
     data: BriefingInputData
-): Promise<{ reply: string; source: 'gemini' | 'synthesis' }> {
-    const apiKey = process.env.GEMINI_API_KEY;
+): Promise<{ reply: string; source: AiSourceType }> {
     const trimmedMsg = message.trim();
+    const pendingCount = data.todos ? data.todos.total - data.todos.completed : 0;
+    const pendingListStr = data.todos?.list && data.todos.list.length > 0 
+        ? data.todos.list.slice(0, 5).join(', ') 
+        : 'ไม่มีงานค้าง';
+    const eventsStr = data.events && data.events.length > 0
+        ? data.events.map(e => `${e.title} (${e.time})`).join(', ')
+        : 'ไม่มีนัดหมายวันนี้';
 
-    if (!apiKey) {
-        return {
-            reply: generateSmartMascotReply(trimmedMsg, data),
-            source: 'synthesis'
-        };
-    }
-
-    try {
-        const pendingCount = data.todos ? data.todos.total - data.todos.completed : 0;
-        const pendingListStr = data.todos?.list && data.todos.list.length > 0 
-            ? data.todos.list.slice(0, 5).join(', ') 
-            : 'ไม่มีงานค้าง';
-        const eventsStr = data.events && data.events.length > 0
-            ? data.events.map(e => `${e.title} (${e.time})`).join(', ')
-            : 'ไม่มีนัดหมายวันนี้';
-
-        const prompt = `คุณคือ "น้องเบส" (Nong Base) มาสคอตสาวน้อยและผู้ช่วย AI ประจำตัวของระบบ Day Base แดชบอร์ด
+    const systemPrompt = `คุณคือ "น้องเบส" (Nong Base) มาสคอตสาวน้อยและผู้ช่วย AI ประจำตัวของระบบ Day Base แดชบอร์ด
 บุคลิก: น่ารัก สดใส มีชีวิตชีวา เป็นกันเอง พูดจาสุภาพลงท้ายด้วย "ค่ะ/นะคะ" และคอยให้พลังบวกแก่ผู้ใช้เสมอ (แทนตัวเองว่า "น้องเบส" หรือ "เบส", เรียกผู้ใช้ว่า "${data.userName || 'คุณ'}")
 
 ข้อมูลสถานะระบบของผู้ใช้ในวันนี้:
@@ -88,39 +91,68 @@ export async function chatWithNongBase(
 - กิจกรรมและนัดหมาย: ${eventsStr}
 - ข้อมูลกระเป๋าเงินวันนี้: เงินคงเหลือ ${data.expenses?.balance || '฿0'} (รายรับ ${data.expenses?.income || '฿0'}, รายจ่าย ${data.expenses?.expense || '฿0'})
 
-ประวัติบทสนทนาก่อนหน้านี้ (ล่าสุด):
-${history.slice(-4).map(m => `${m.sender === 'user' ? 'ผู้ใช้' : 'น้องเบส'}: ${m.text}`).join('\n')}
-
-คำถามหรือข้อความล่าสุดจากผู้ใช้: "${trimmedMsg}"
-
 คำแนะนำในการตอบ:
 1. หากผู้ใช้ถามเรื่องในระบบ เช่น สภาพอากาศ, งานค้าง, นัดหมาย, การเงิน ให้ตอบโดยอ้างอิงจากข้อมูลด้านบนอย่างถูกต้อง ครบถ้วน และอ่านง่าย
 2. หากผู้ใช้ชวนคุยเล่น ทักทาย ขอกำลังใจ หรือถามสารทุกข์สุกดิบ ให้ตอบอย่างเป็นมิตร สดใส ร่าเริง และน่ารัก
 3. คำตอบควรมีความยาวพอดี กระชับ สบายตา ประมาณ 2-4 ประโยค`;
 
-        const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-goog-api-key': apiKey,
-            },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }]
-            }),
-            cache: 'no-store'
-        });
+    // 1. Try Gemini first
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (geminiKey) {
+        try {
+            const geminiPrompt = `${systemPrompt}
 
-        if (response.ok) {
-            const resData = await response.json();
-            const aiText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (aiText) {
-                return { reply: aiText.trim(), source: 'gemini' };
+ประวัติบทสนทนาก่อนหน้านี้ (ล่าสุด):
+${history.slice(-4).map(m => `${m.sender === 'user' ? 'ผู้ใช้' : 'น้องเบส'}: ${m.text}`).join('\n')}
+
+คำถามหรือข้อความล่าสุดจากผู้ใช้: "${trimmedMsg}"`;
+
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': geminiKey,
+                },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: geminiPrompt }] }]
+                }),
+                cache: 'no-store'
+            });
+
+            if (response.ok) {
+                const resData = await response.json();
+                const aiText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (aiText) {
+                    return { reply: aiText.trim(), source: 'gemini' };
+                }
+            } else {
+                console.warn(`[AI Chat] Gemini API returned ${response.status}. Switching to OpenRouter MiniMax M3...`);
             }
+        } catch (geminiErr) {
+            console.warn('[AI Chat] Gemini error. Switching to OpenRouter MiniMax M3...', geminiErr);
         }
-    } catch {
-        // Fallback gracefully on API or network errors
     }
 
+    // 2. Fallback to OpenRouter MiniMax M3 (Free)
+    try {
+        const messages: OpenRouterChatMessage[] = [
+            { role: 'system', content: systemPrompt },
+            ...history.slice(-4).map(m => ({
+                role: (m.sender === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+                content: m.text
+            })),
+            { role: 'user', content: trimmedMsg }
+        ];
+
+        const openRouterReply = await callOpenRouterCompletion(messages, { temperature: 0.6 });
+        if (openRouterReply) {
+            return { reply: openRouterReply, source: 'openrouter' };
+        }
+    } catch (openRouterErr) {
+        console.warn('[AI Chat] OpenRouter fallback failed:', openRouterErr);
+    }
+
+    // 3. Fallback to local rule-based responses
     return {
         reply: generateSmartMascotReply(trimmedMsg, data),
         source: 'synthesis'

@@ -36,7 +36,8 @@ const requiredFiles = [
     'app/dashboard/tracker.tsx',
     'app/dashboard/fuel-prices.tsx',
     'app/dashboard/ai-briefing-card.tsx',
-    'utils/ai-briefing.ts'
+    'utils/ai-briefing.ts',
+    'utils/openrouter.ts'
 ];
 
 requiredFiles.forEach((relPath) => {
@@ -91,9 +92,29 @@ registeredTabs.forEach((tab) => {
 });
 
 // --------------------------------------------------
-// Test 4: Next.js Production Build Check
+// Test 4: OpenRouter & AI JSON Extraction Check
 // --------------------------------------------------
-console.log('\n📌 Test Suite 4: Next.js Production Build Check');
+console.log('\n📌 Test Suite 4: AI Intent JSON Extraction Checks');
+try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { extractJsonFromText } = require('../utils/openrouter');
+    const directParsed = extractJsonFromText('{"action": "add_todo"}');
+    assert(directParsed?.action === 'add_todo', 'Extracts direct JSON object correctly');
+
+    const markdownParsed = extractJsonFromText('```json\n{"action": "get_weather"}\n```');
+    assert(markdownParsed?.action === 'get_weather', 'Extracts markdown code-block JSON correctly');
+
+    const surroundedParsed = extractJsonFromText('ข้อความนำหน้า {"action": "list_todos"} ข้อความต่อท้าย');
+    assert(surroundedParsed?.action === 'list_todos', 'Extracts JSON embedded in conversational text');
+} catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    assert(false, `OpenRouter JSON extraction test failed: ${msg}`);
+}
+
+// --------------------------------------------------
+// Test 5: Next.js Production Build Check
+// --------------------------------------------------
+console.log('\n📌 Test Suite 5: Next.js Production Build Check');
 try {
     execSync('npx next build', { stdio: 'inherit', cwd: process.cwd() });
     assert(true, 'Next.js production build succeeded');

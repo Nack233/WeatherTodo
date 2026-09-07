@@ -1,4 +1,5 @@
 import type { AiIntentResult, AiIntentResponse } from '@/types/line';
+import { callOpenRouterCompletion, extractJsonFromText } from '@/utils/openrouter';
 
 /**
  * Fallback heuristic parser when AI API is unavailable
@@ -107,18 +108,48 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
 }
 
 /**
- * Use Gemini AI to extract intent and parameters from user's natural language
+ * Fallback to OpenRouter MiniMax M3 for intent analysis
+ */
+async function analyzeIntentViaOpenRouter(systemPrompt: string, userMessage: string): Promise<AiIntentResponse | null> {
+    try {
+        const rawJsonText = await callOpenRouterCompletion([
+            {
+                role: 'system',
+                content: `${systemPrompt}\n\nสำคัญมาก: คุณต้องส่งคำตอบเป็นรูปแบบ JSON ONLY เท่านั้น ห้ามใส่ข้อความอธิบายใดๆ นอกเหนือจาก JSON`
+            },
+            {
+                role: 'user',
+                content: `ข้อความของผู้ใช้: "${userMessage}"`
+            }
+        ], {
+            temperature: 0.1,
+            responseFormat: { type: 'json_object' }
+        });
+
+        if (!rawJsonText) return null;
+
+        const parsed = extractJsonFromText<AiIntentResponse>(rawJsonText);
+        if (!parsed) return null;
+
+        if (Array.isArray(parsed) && parsed.length === 1) {
+            return parsed[0];
+        }
+        return parsed;
+    } catch (err) {
+        console.error('[AI Intent] OpenRouter analysis error:', err);
+        return null;
+    }
+}
+
+/**
+ * Use Gemini AI to extract intent and parameters from user's natural language,
+ * with automatic failover to OpenRouter MiniMax M3 if Gemini quota is exhausted.
  */
 export async function analyzeLineIntent(userMessage: string): Promise<AiIntentResponse> {
     const today = new Date();
     // Thai local date format YYYY-MM-DD
     const todayStr = today.toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
     const dayOfWeek = today.toLocaleDateString('th-TH', { weekday: 'long', timeZone: 'Asia/Bangkok' });
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return fallbackIntentParser(userMessage, todayStr);
-    }
 
     const systemPrompt = `คุณคือ "เบส" (Base) AI ผู้ช่วยส่วนตัวสาวน้อยสุดน่ารัก ร่าเริง และสดใส (สไตล์อนิเมะสาวน้อยคิวท์ๆ สวมฮู้ด Day Base ถือแก้วกาแฟ) ประจำระบบ Day Base
 บุคลิกและสไตล์การพูด:
@@ -160,51 +191,62 @@ Action Types ที่เป็นไปได้:
 }
 - หากผู้ใช้สั่งงานหลายอย่างในประโยคเดียว ให้ส่งออกเป็น JSON Array ของ Object ข้างต้น เช่น [ { "action": "add_todo", ... }, { "action": "add_todo", ... } ]`;
 
-    try {
-        const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey,
-                },
-                body: JSON.stringify({
-                    contents: [
-                        {
-                            parts: [
-                                { text: systemPrompt },
-                                { text: `ข้อความของผู้ใช้: "${userMessage}"` },
-                            ],
-                        },
-                    ],
-                    generationConfig: {
-                        temperature: 0.1,
-                        responseMimeType: 'application/json',
+    // 1. Try Gemini 3.5 Flash Lite first
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (apiKey) {
+        try {
+            const response = await fetch(
+                'https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-goog-api-key': apiKey,
                     },
-                }),
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    { text: systemPrompt },
+                                    { text: `ข้อความของผู้ใช้: "${userMessage}"` },
+                                ],
+                            },
+                        ],
+                        generationConfig: {
+                            temperature: 0.1,
+                            responseMimeType: 'application/json',
+                        },
+                    }),
+                }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                const rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (rawJsonText) {
+                    const parsed = extractJsonFromText<AiIntentResponse>(rawJsonText);
+                    if (parsed) {
+                        if (Array.isArray(parsed) && parsed.length === 1) {
+                            return parsed[0];
+                        }
+                        return parsed;
+                    }
+                }
+            } else {
+                console.warn(`[AI Intent] Gemini API returned ${response.status}. Switching to OpenRouter MiniMax M3...`);
             }
-        );
-
-        if (!response.ok) {
-            console.error('[AI Intent] Gemini API error:', response.status, await response.text());
-            return fallbackIntentParser(userMessage, todayStr);
+        } catch (geminiErr) {
+            console.warn('[AI Intent] Gemini API error. Switching to OpenRouter MiniMax M3...', geminiErr);
         }
-
-        const data = await response.json();
-        const rawJsonText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        if (!rawJsonText) {
-            return fallbackIntentParser(userMessage, todayStr);
-        }
-
-        const parsed = JSON.parse(rawJsonText) as AiIntentResponse;
-        if (Array.isArray(parsed) && parsed.length === 1) {
-            return parsed[0];
-        }
-        return parsed;
-    } catch (err) {
-        console.error('[AI Intent] Parse error:', err);
-        return fallbackIntentParser(userMessage, todayStr);
     }
+
+    // 2. Fallback to OpenRouter MiniMax M3 (Free)
+    const openRouterResult = await analyzeIntentViaOpenRouter(systemPrompt, userMessage);
+    if (openRouterResult) {
+        return openRouterResult;
+    }
+
+    // 3. Fallback to heuristic parser
+    return fallbackIntentParser(userMessage, todayStr);
 }

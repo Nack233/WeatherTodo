@@ -58,7 +58,7 @@ export default function AiBriefingCard({ data, onShowToast }: AiBriefingCardProp
     const [isCopied, setIsCopied] = useState<boolean>(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
-    const [sourceTag, setSourceTag] = useState<'gemini' | 'synthesis'>('synthesis');
+    const [sourceTag, setSourceTag] = useState<'gemini' | 'openrouter' | 'synthesis'>('synthesis');
 
     // Chat State
     const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -425,7 +425,11 @@ export default function AiBriefingCard({ data, onShowToast }: AiBriefingCardProp
                             )}
                         </h3>
                         <span className="ai-subtitle">
-                            {sourceTag === 'gemini' ? 'ผู้ช่วย AI ประจำตัว · ระบบ Day Base' : 'สรุปข้อมูลภาพรวม & แชทอัจฉริยะ'}
+                            {sourceTag === 'gemini' 
+                                ? 'ผู้ช่วย AI ประจำตัว (Gemini) · ระบบ Day Base' 
+                                : sourceTag === 'openrouter' 
+                                ? 'ผู้ช่วย AI ประจำตัว (MiniMax M3) · ระบบ Day Base' 
+                                : 'สรุปข้อมูลภาพรวม & แชทอัจฉริยะ'}
                         </span>
                     </div>
                 </div>
