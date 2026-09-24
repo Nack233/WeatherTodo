@@ -4,11 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Wallet, TrendingUp, TrendingDown, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/app/components/Toast';
 import type { Expense, TransactionType } from '@/types/database';
-import {
-    getExpenses,
-    createExpense,
-    deleteExpense,
-} from '@/app/actions/tracker-actions';
+import { useTracker } from '@/hooks/use-tracker';
 
 const CATEGORIES_CONFIG = {
     income: [
@@ -37,9 +33,17 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export default function Tracker() {
-    const [expenses, setExpenses] = useState<Expense[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [fetchError, setFetchError] = useState<string | null>(null);
+    const { showToast } = useToast();
+
+    // Custom hook for tracker data & operations
+    const {
+        expenses,
+        isLoading,
+        fetchError,
+        deletingIds,
+        addExpense,
+        deleteExpenseItem,
+    } = useTracker({ onShowToast: showToast });
 
     // Form States
     const [desc, setDesc] = useState('');
@@ -48,31 +52,14 @@ export default function Tracker() {
     const [category, setCategory] = useState('');
     const [date, setDate] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
     // Filter States
     const [search, setSearch] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
 
-    const { showToast } = useToast();
-
-    // Fetch expenses from Supabase
-    const fetchExpenses = useCallback(async () => {
-        setIsLoading(true);
-        setFetchError(null);
-        const result = await getExpenses();
-        if (result.error) {
-            setFetchError(result.error);
-        } else {
-            setExpenses(result.data ?? []);
-        }
-        setIsLoading(false);
-    }, []);
-
     useEffect(() => {
-        fetchExpenses();
         setDate(new Date().toISOString().split('T')[0]);
-    }, [fetchExpenses]);
+    }, []);
 
     // Set default category when type changes
     useEffect(() => {
@@ -89,7 +76,7 @@ export default function Tracker() {
         if (!desc.trim() || isNaN(amtNum) || amtNum <= 0 || !date) return;
         setIsSubmitting(true);
 
-        const result = await createExpense({
+        const success = await addExpense({
             note: desc.trim(),
             amount: amtNum,
             type,
@@ -97,11 +84,7 @@ export default function Tracker() {
             transaction_date: date,
         });
 
-        if (result.error) {
-            showToast(`บันทึกธุรกรรมล้มเหลว: ${result.error}`, 'error');
-        } else if (result.data) {
-            setExpenses(prev => [result.data!, ...prev]);
-            showToast('บันทึกธุรกรรมสำเร็จ! ✓', 'success');
+        if (success) {
             setDesc('');
             setAmount('');
         }
@@ -111,24 +94,7 @@ export default function Tracker() {
 
     // Delete transaction
     const handleDeleteTx = async (id: string) => {
-        if (deletingIds.has(id)) return;
-
-        setDeletingIds(prev => new Set(prev).add(id));
-
-        const result = await deleteExpense(id);
-
-        setDeletingIds(prev => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-        });
-
-        if (result.error) {
-            showToast(`ลบรายการล้มเหลว: ${result.error}`, 'error');
-        } else {
-            setExpenses(prev => prev.filter(t => t.id !== id));
-            showToast('ลบรายการเรียบร้อยแล้ว', 'success');
-        }
+        await deleteExpenseItem(id);
     };
 
     // Financial calculations

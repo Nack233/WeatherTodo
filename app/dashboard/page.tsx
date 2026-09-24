@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import Image from 'next/image';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth, useTheme } from '../providers';
 import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
 import dynamic from 'next/dynamic';
@@ -44,11 +45,33 @@ import {
     Moon, Sun, LogOut 
 } from 'lucide-react';
 
-export default function DashboardPage() {
+const VALID_TABS = ['dashboard', 'weather', 'todo', 'calendar', 'tracker', 'fuel-prices'] as const;
+type TabType = typeof VALID_TABS[number];
+
+function isValidTab(tab: string | null): tab is TabType {
+    return Boolean(tab && (VALID_TABS as readonly string[]).includes(tab));
+}
+
+function DashboardContent() {
     const { user, logout, isLoading } = useAuth();
     const { theme, toggleTheme } = useTheme();
 
-    const [activeTab, setActiveTab] = useState<string>('dashboard');
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    const activeTab: TabType = isValidTab(tabParam) ? tabParam : 'dashboard';
+
+    const handleTabChange = useCallback((newTab: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (newTab === 'dashboard') {
+            params.delete('tab');
+        } else {
+            params.set('tab', newTab);
+        }
+        const qs = params.toString();
+        router.replace(qs ? `/dashboard?${qs}` : '/dashboard', { scroll: false });
+    }, [router, searchParams]);
+
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
     const [locationBadge, setLocationBadge] = useState<string>('ไทย');
 
@@ -78,9 +101,6 @@ export default function DashboardPage() {
             window.removeEventListener('weather_location_change', updateBadge);
         };
     }, []);
-
-    // Route protection is handled by middleware (utils/supabase/middleware.ts)
-    // No client-side auth guard needed here.
 
     // Local Date display
     useEffect(() => {
@@ -119,7 +139,7 @@ export default function DashboardPage() {
     const renderActiveTabContent = () => {
         switch (activeTab) {
             case 'dashboard':
-                return <Overview user={user} setActiveTab={setActiveTab} />;
+                return <Overview user={user} setActiveTab={handleTabChange} />;
             case 'weather':
                 return <Weather />;
             case 'todo':
@@ -131,7 +151,7 @@ export default function DashboardPage() {
             case 'fuel-prices':
                 return <FuelPrices />;
             default:
-                return <Overview user={user} setActiveTab={setActiveTab} />;
+                return <Overview user={user} setActiveTab={handleTabChange} />;
         }
     };
 
@@ -140,7 +160,6 @@ export default function DashboardPage() {
         // Middleware will redirect to /login on next navigation
         window.location.href = '/login';
     };
-
 
     return (
         <div className="app-container">
@@ -158,42 +177,42 @@ export default function DashboardPage() {
                 <nav className="nav-menu">
                     <button 
                         className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('dashboard')}
+                        onClick={() => handleTabChange('dashboard')}
                     >
                         <Home />
                         <span>แดชบอร์ด</span>
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'weather' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('weather')}
+                        onClick={() => handleTabChange('weather')}
                     >
                         <CloudSun />
                         <span>พยากรณ์อากาศ</span>
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'todo' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('todo')}
+                        onClick={() => handleTabChange('todo')}
                     >
                         <CheckSquare />
                         <span>รายการต้องทำ</span>
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('calendar')}
+                        onClick={() => handleTabChange('calendar')}
                     >
                         <CalendarIcon />
                         <span>ปฏิทินกิจกรรม</span>
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'tracker' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('tracker')}
+                        onClick={() => handleTabChange('tracker')}
                     >
                         <Wallet />
                         <span>รายรับ-รายจ่าย</span>
                     </button>
                     <button 
                         className={`nav-item ${activeTab === 'fuel-prices' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('fuel-prices')}
+                        onClick={() => handleTabChange('fuel-prices')}
                     >
                         <MapPin />
                         <span>ราคาน้ำมัน</span>
@@ -251,42 +270,42 @@ export default function DashboardPage() {
             <nav className="bottom-nav">
                 <button 
                     className={`bottom-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('dashboard')}
+                    onClick={() => handleTabChange('dashboard')}
                 >
                     <Home />
                     <span>แดชบอร์ด</span>
                 </button>
                 <button 
                     className={`bottom-nav-item ${activeTab === 'weather' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('weather')}
+                    onClick={() => handleTabChange('weather')}
                 >
                     <CloudSun />
                     <span>อากาศ</span>
                 </button>
                 <button 
                     className={`bottom-nav-item ${activeTab === 'todo' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('todo')}
+                    onClick={() => handleTabChange('todo')}
                 >
                     <CheckSquare />
                     <span>งาน</span>
                 </button>
                 <button 
                     className={`bottom-nav-item ${activeTab === 'calendar' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('calendar')}
+                    onClick={() => handleTabChange('calendar')}
                 >
                     <CalendarIcon />
                     <span>ปฏิทิน</span>
                 </button>
                 <button 
                     className={`bottom-nav-item ${activeTab === 'tracker' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('tracker')}
+                    onClick={() => handleTabChange('tracker')}
                 >
                     <Wallet />
                     <span>การเงิน</span>
                 </button>
                 <button 
                     className={`bottom-nav-item ${activeTab === 'fuel-prices' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('fuel-prices')}
+                    onClick={() => handleTabChange('fuel-prices')}
                 >
                     <MapPin />
                     <span>น้ำมัน</span>
@@ -296,5 +315,24 @@ export default function DashboardPage() {
             {/* Floating Mascot LINE Bot Assistant Widget */}
             <MascotLineWidget userEmail={user?.email || ''} userName={user?.name || 'คุณ'} />
         </div>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100vh',
+                color: 'var(--text-secondary)',
+                fontFamily: 'var(--font-primary)'
+            }}>
+                กำลังโหลด...
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
     );
 }

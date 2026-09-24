@@ -4,11 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, Plus, Trash2, Clock, Loader2, AlertCircle } from 'lucide-react';
 import { useToast } from '@/app/components/Toast';
 import type { CalendarEvent } from '@/types/database';
-import {
-    getCalendarEvents,
-    createCalendarEvent,
-    deleteCalendarEvent,
-} from '@/app/actions/calendar-actions';
+import { useCalendar } from '@/hooks/use-calendar';
 
 const THAI_MONTH_NAMES = [
     'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
@@ -16,9 +12,17 @@ const THAI_MONTH_NAMES = [
 ];
 
 export default function Calendar() {
-    const [eventsList, setEventsList] = useState<CalendarEvent[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [fetchError, setFetchError] = useState<string | null>(null);
+    const { showToast } = useToast();
+
+    // Custom hook for calendar events data & actions
+    const {
+        eventsList,
+        isLoading,
+        fetchError,
+        deletingIds,
+        addEvent,
+        deleteEvent,
+    } = useCalendar({ onShowToast: showToast });
 
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
     const [selectedDateStr, setSelectedDateStr] = useState<string>('');
@@ -28,28 +32,11 @@ export default function Calendar() {
     const [eventTime, setEventTime] = useState('09:00');
     const [eventTag, setEventTag] = useState('tag-blue');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-
-    const { showToast } = useToast();
-
-    // Fetch events from Supabase
-    const fetchEvents = useCallback(async () => {
-        setIsLoading(true);
-        setFetchError(null);
-        const result = await getCalendarEvents();
-        if (result.error) {
-            setFetchError(result.error);
-        } else {
-            setEventsList(result.data ?? []);
-        }
-        setIsLoading(false);
-    }, []);
 
     useEffect(() => {
-        fetchEvents();
         const todayStr = new Date().toISOString().split('T')[0];
         setSelectedDateStr(todayStr);
-    }, [fetchEvents]);
+    }, []);
 
     // Build events lookup map by YYYY-MM-DD
     const eventsMap: Record<string, CalendarEvent[]> = {};
@@ -84,19 +71,14 @@ export default function Calendar() {
         setIsSubmitting(true);
 
         const start_date = `${selectedDateStr}T${eventTime}:00`;
-
-        const result = await createCalendarEvent({
+        const success = await addEvent({
             title: eventTitle.trim(),
             start_date,
             color: eventTag,
             all_day: false,
         });
 
-        if (result.error) {
-            showToast(`บันทึกกิจกรรมล้มเหลว: ${result.error}`, 'error');
-        } else if (result.data) {
-            setEventsList(prev => [...prev, result.data!]);
-            showToast('บันทึกกิจกรรมสำเร็จ! ✓', 'success');
+        if (success) {
             setEventTitle('');
         }
 
@@ -105,24 +87,7 @@ export default function Calendar() {
 
     // Delete event
     const handleDeleteEvent = async (eventId: string) => {
-        if (deletingIds.has(eventId)) return;
-
-        setDeletingIds(prev => new Set(prev).add(eventId));
-
-        const result = await deleteCalendarEvent(eventId);
-
-        setDeletingIds(prev => {
-            const next = new Set(prev);
-            next.delete(eventId);
-            return next;
-        });
-
-        if (result.error) {
-            showToast(`ลบกิจกรรมล้มเหลว: ${result.error}`, 'error');
-        } else {
-            setEventsList(prev => prev.filter(e => e.id !== eventId));
-            showToast('ลบกิจกรรมแล้ว', 'success');
-        }
+        await deleteEvent(eventId);
     };
 
     const getSelectedDateLabel = () => {

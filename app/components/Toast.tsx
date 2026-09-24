@@ -1,12 +1,12 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { CheckCircle, XCircle, X } from 'lucide-react';
+import { CheckCircle, XCircle, Info, X } from 'lucide-react';
 
 // ==========================================
 // TYPES
 // ==========================================
-export type ToastType = 'success' | 'error';
+export type ToastType = 'success' | 'error' | 'info';
 
 interface ToastItem {
     id: string;
@@ -55,10 +55,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                         role="alert"
                     >
                         <span className="toast-icon">
-                            {toast.type === 'success'
-                                ? <CheckCircle size={18} />
-                                : <XCircle size={18} />
-                            }
+                            {toast.type === 'success' ? (
+                                <CheckCircle size={18} />
+                            ) : toast.type === 'info' ? (
+                                <Info size={18} />
+                            ) : (
+                                <XCircle size={18} />
+                            )}
                         </span>
                         <span className="toast-message">{toast.message}</span>
                         <button

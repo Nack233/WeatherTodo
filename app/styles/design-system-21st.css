@@ -1,0 +1,500 @@
+/* ============================================================
+   21ST.DEV DESIGN SYSTEM EXTENSIONS
+   Bento Grids, Ambient Atmospheric Glows, Glass Tiles & Modern Nav
+   ============================================================ */
+
+/* --- Modern Glass & Glow Tokens --- */
+.glass-effect {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%), var(--bg-card);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.32);
+}
+
+[data-theme="light"] .glass-effect {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 8px 30px 0 rgba(0, 0, 0, 0.06);
+}
+
+/* --- Bento Grid System --- */
+.bento-weather-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.25rem;
+    width: 100%;
+}
+
+.bento-col-12 { grid-column: span 12; }
+.bento-col-8  { grid-column: span 8; }
+.bento-col-7  { grid-column: span 7; }
+.bento-col-5  { grid-column: span 5; }
+.bento-col-4  { grid-column: span 4; }
+.bento-col-6  { grid-column: span 6; }
+
+.bento-card {
+    border-radius: 20px;
+    padding: 1.6rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), 
+                border-color 0.25s ease;
+}
+
+.bento-card:hover {
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .bento-card:hover {
+    border-color: rgba(0, 0, 0, 0.14);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Hero Weather Card (Atmospheric Glass) --- */
+.bento-hero-weather {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 290px;
+}
+
+.ambient-weather-glow {
+    position: absolute;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    filter: blur(70px);
+    opacity: 0.25;
+    pointer-events: none;
+    z-index: 0;
+    transition: all 0.6s ease;
+}
+
+.ambient-glow-sun {
+    top: -40px;
+    right: -40px;
+    background: radial-gradient(circle, #f59e0b 0%, #ef4444 70%);
+}
+
+.ambient-glow-rain {
+    top: -40px;
+    right: -40px;
+    background: radial-gradient(circle, #06b6d4 0%, #3b82f6 70%);
+}
+
+.ambient-glow-cloud {
+    top: -40px;
+    right: -40px;
+    background: radial-gradient(circle, #94a3b8 0%, #64748b 70%);
+}
+
+.bento-hero-header {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.bento-hero-body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 1.5rem;
+}
+
+.bento-hero-temp {
+    font-size: 5.5rem;
+    font-weight: 800;
+    letter-spacing: -3px;
+    line-height: 0.95;
+    background: linear-gradient(180deg, #ffffff 40%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="light"] .bento-hero-temp {
+    background: linear-gradient(180deg, #0f172a 40%, #475569 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.bento-hero-condition {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.5rem;
+}
+
+.bento-hero-condition-icon {
+    width: 84px;
+    height: 84px;
+    filter: drop-shadow(0 6px 16px rgba(245, 158, 11, 0.4));
+}
+
+.bento-hero-condition-name {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    letter-spacing: 0.2px;
+}
+
+/* --- Stat Tiles Matrix --- */
+.bento-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    height: 100%;
+}
+
+.bento-metric-tile {
+    padding: 1.25rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.bento-metric-tile:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="light"] .bento-metric-tile {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.07);
+}
+
+[data-theme="light"] .bento-metric-tile:hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+.bento-tile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.bento-tile-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bento-tile-icon-box.cyan { background: rgba(6, 182, 212, 0.15); color: var(--accent-cyan); }
+.bento-tile-icon-box.purple { background: rgba(168, 85, 247, 0.15); color: var(--accent-purple); }
+.bento-tile-icon-box.blue { background: rgba(59, 130, 246, 0.15); color: var(--primary); }
+.bento-tile-icon-box.amber { background: rgba(245, 158, 11, 0.15); color: var(--accent-yellow); }
+
+.bento-tile-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.bento-tile-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.bento-tile-sub {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.15rem;
+}
+
+/* --- Hourly Rail Horizontal Slider --- */
+.bento-hourly-rail {
+    display: flex;
+    gap: 0.85rem;
+    overflow-x: auto;
+    padding: 0.6rem 0.2rem 1rem;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+.bento-hourly-rail:active {
+    cursor: grabbing;
+}
+
+.bento-hourly-rail::-webkit-scrollbar {
+    height: 6px;
+}
+.bento-hourly-rail::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+}
+
+.bento-hourly-pill {
+    flex: 0 0 auto;
+    width: 88px;
+    padding: 1rem 0.6rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    text-align: center;
+    transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: default;
+}
+
+.bento-hourly-pill:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-cyan);
+    box-shadow: 0 8px 20px rgba(6, 182, 212, 0.15);
+}
+
+[data-theme="light"] .bento-hourly-pill {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .bento-hourly-pill:hover {
+    background: #f8fafc;
+    border-color: #2563eb;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.1);
+}
+
+.bento-hourly-time {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.bento-hourly-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--accent-cyan);
+}
+
+.bento-hourly-temp {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.bento-hourly-rain {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent-cyan);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(6, 182, 212, 0.12);
+}
+
+/* --- 7-Day Forecast Modern Timeline --- */
+.bento-daily-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.25rem;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    gap: 1rem;
+}
+
+.bento-daily-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--border-color);
+}
+
+[data-theme="light"] .bento-daily-row:hover {
+    background: #f1f5f9;
+}
+
+.bento-daily-day {
+    font-size: 0.95rem;
+    font-weight: 600;
+    min-width: 80px;
+    color: var(--text-primary);
+}
+
+.bento-daily-bar-container {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    max-width: 260px;
+}
+
+.bento-temp-bar-bg {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    overflow: hidden;
+    position: relative;
+}
+
+[data-theme="light"] .bento-temp-bar-bg {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.bento-temp-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-yellow));
+}
+
+/* --- Modern Segmented Pills Control --- */
+.segmented-pill-bar {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(16px);
+    gap: 0.25rem;
+}
+
+[data-theme="light"] .segmented-pill-bar {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.segmented-pill-btn {
+    border: none;
+    outline: none;
+    padding: 0.45rem 1rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.segmented-pill-btn:hover {
+    color: var(--text-primary);
+}
+
+.segmented-pill-btn.active {
+    background: var(--text-primary);
+    color: var(--bg-main) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .segmented-pill-btn.active {
+    background: #0f172a;
+    color: #ffffff !important;
+}
+
+/* --- Interactive Todo Glowing Cards --- */
+.todo-card-interactive {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.25rem;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.todo-card-interactive:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="light"] .todo-card-interactive {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .todo-card-interactive:hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+
+.todo-card-interactive.priority-high {
+    border-left: 4px solid var(--accent-red);
+}
+.todo-card-interactive.priority-medium {
+    border-left: 4px solid var(--accent-yellow);
+}
+.todo-card-interactive.priority-low {
+    border-left: 4px solid var(--accent-green);
+}
+
+.todo-card-interactive.completed {
+    opacity: 0.65;
+    background: rgba(255, 255, 255, 0.015);
+}
+
+/* --- Floating Glass Mobile Dock --- */
+@media (max-width: 768px) {
+    .bento-weather-grid {
+        grid-template-columns: 1fr;
+    }
+    .bento-col-12, .bento-col-8, .bento-col-7, .bento-col-5, .bento-col-4, .bento-col-6 {
+        grid-column: span 1;
+    }
+    .bento-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .bento-hero-temp {
+        font-size: 4.2rem;
+    }
+    .bento-hero-condition-icon {
+        width: 64px;
+        height: 64px;
+    }
+
+    .bottom-nav {
+        left: 1rem !important;
+        right: 1rem !important;
+        bottom: 1rem !important;
+        border-radius: 24px !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(6, 182, 212, 0.1) !important;
+        background: rgba(15, 23, 42, 0.85) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        height: 65px !important;
+        width: auto !important;
+    }
+
+    [data-theme="light"] .bottom-nav {
+        background: rgba(255, 255, 255, 0.88) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15) !important;
+    }
+}
+

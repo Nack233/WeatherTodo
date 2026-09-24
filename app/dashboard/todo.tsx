@@ -4,13 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Trash2, Calendar, AlertCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useToast } from '@/app/components/Toast';
 import type { Todo, Priority } from '@/types/database';
-import {
-    getTodos,
-    createTodo,
-    toggleTodo,
-    deleteTodo,
-    updateTodo,
-} from '@/app/actions/todo-actions';
+import { useTodos } from '@/hooks/use-todos';
 
 // ==========================================
 // HELPERS
@@ -66,12 +60,22 @@ function TodoSkeleton() {
 // MAIN COMPONENT
 // ==========================================
 export default function Todo() {
-    // --- State ---
-    const [todos, setTodos] = useState<Todo[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [fetchError, setFetchError] = useState<string | null>(null);
+    const { showToast } = useToast();
 
-    // Form
+    // Custom hook for todos data & operations
+    const {
+        todos,
+        isLoading,
+        fetchError,
+        deletingIds,
+        togglingIds,
+        fetchTodos,
+        addTodo,
+        toggleTodoItem,
+        deleteTodoItem,
+    } = useTodos({ onShowToast: showToast });
+
+    // Form states
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<Priority>('medium');
@@ -82,29 +86,9 @@ export default function Todo() {
     // Filter
     const [filter, setFilter] = useState<'all' | 'active' | 'completed'>('all');
 
-    // Deleting IDs (for per-item loading state)
-    const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-    const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
-
-    const { showToast } = useToast();
-
-    // --- Fetch todos on mount ---
-    const fetchTodos = useCallback(async () => {
-        setIsLoading(true);
-        setFetchError(null);
-        const result = await getTodos();
-        if (result.error) {
-            setFetchError(result.error);
-        } else {
-            setTodos(result.data ?? []);
-        }
-        setIsLoading(false);
-    }, []);
-
     useEffect(() => {
-        fetchTodos();
         setDueDate(new Date().toISOString().split('T')[0]);
-    }, [fetchTodos]);
+    }, []);
 
     // --- Create ---
     const handleAddTask = async (e: React.FormEvent) => {
@@ -112,19 +96,14 @@ export default function Todo() {
         if (!title.trim()) return;
         setIsSubmitting(true);
 
-        const result = await createTodo({
-            title: title.trim(),
-            description: description.trim() || null,
+        const success = await addTodo({
+            title,
+            description,
             priority,
-            due_date: dueDate || null,
+            due_date: dueDate,
         });
 
-        if (result.error) {
-            showToast(`เพิ่มงานล้มเหลว: ${result.error}`, 'error');
-        } else if (result.data) {
-            setTodos(prev => [result.data!, ...prev]);
-            showToast('เพิ่มรายการงานสำเร็จ! ✓', 'success');
-            // Reset form
+        if (success) {
             setTitle('');
             setDescription('');
             setPriority('medium');
@@ -137,58 +116,12 @@ export default function Todo() {
 
     // --- Toggle ---
     const handleToggle = async (todo: Todo) => {
-        if (togglingIds.has(todo.id)) return;
-
-        const newCompleted = !todo.completed;
-
-        // Optimistic update
-        setTodos(prev =>
-            prev.map(t => t.id === todo.id ? { ...t, completed: newCompleted } : t)
-        );
-        setTogglingIds(prev => new Set(prev).add(todo.id));
-
-        const result = await toggleTodo(todo.id, newCompleted);
-
-        setTogglingIds(prev => {
-            const next = new Set(prev);
-            next.delete(todo.id);
-            return next;
-        });
-
-        if (result.error) {
-            // Revert optimistic update
-            setTodos(prev =>
-                prev.map(t => t.id === todo.id ? { ...t, completed: todo.completed } : t)
-            );
-            showToast(`อัปเดตสถานะล้มเหลว: ${result.error}`, 'error');
-        } else {
-            showToast(
-                newCompleted ? 'ทำเครื่องหมายเสร็จแล้ว ✓' : 'ย้ายกลับสู่รายการที่ยังทำอยู่',
-                'success'
-            );
-        }
+        await toggleTodoItem(todo);
     };
 
     // --- Delete ---
     const handleDelete = async (id: string) => {
-        if (deletingIds.has(id)) return;
-
-        setDeletingIds(prev => new Set(prev).add(id));
-
-        const result = await deleteTodo(id);
-
-        setDeletingIds(prev => {
-            const next = new Set(prev);
-            next.delete(id);
-            return next;
-        });
-
-        if (result.error) {
-            showToast(`ลบงานล้มเหลว: ${result.error}`, 'error');
-        } else {
-            setTodos(prev => prev.filter(t => t.id !== id));
-            showToast('ลบรายการงานแล้ว', 'success');
-        }
+        await deleteTodoItem(id);
     };
 
     // --- Filtering & sorting ---

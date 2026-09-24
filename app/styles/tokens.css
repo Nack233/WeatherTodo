@@ -1,0 +1,77 @@
+/* ==========================================
+   DESIGN SYSTEM & CSS VARIABLES
+   ========================================== */
+:root {
+    /* Fonts */
+    --font-primary: var(--font-inter), var(--font-prompt), sans-serif;
+
+    /* Theme: Dark Mode (Default) */
+    --bg-main: #0b0f19;
+    --bg-sidebar: rgba(15, 23, 42, 0.6);
+    --bg-card: rgba(20, 30, 55, 0.45);
+    --bg-card-hover: rgba(30, 41, 73, 0.6);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color-focus: rgba(6, 182, 212, 0.5);
+    
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    /* Brand & Accent Colors */
+    --primary: #3b82f6; /* Slate Blue */
+    --primary-glow: rgba(59, 130, 246, 0.35);
+    --accent-cyan: #06b6d4;
+    --accent-cyan-glow: rgba(6, 182, 212, 0.3);
+    --accent-purple: #a855f7;
+    --accent-purple-glow: rgba(168, 85, 247, 0.3);
+    --accent-green: #10b981;
+    --accent-green-glow: rgba(16, 185, 129, 0.3);
+    --accent-yellow: #f59e0b;
+    --accent-yellow-glow: rgba(245, 158, 11, 0.3);
+    --accent-red: #ef4444;
+    --accent-red-glow: rgba(239, 68, 68, 0.3);
+
+    /* Form & Surface Tokens (Dark) */
+    --bg-input: rgba(15, 23, 42, 0.55);
+    --bg-input-focus: rgba(15, 23, 42, 0.75);
+    --border-input: rgba(255, 255, 255, 0.12);
+    --border-input-focus: rgba(6, 182, 212, 0.6);
+    --text-placeholder: rgba(148, 163, 184, 0.6);
+    --bg-control: rgba(15, 23, 42, 0.5);
+
+    /* Glass Effects */
+    --glass-blur: blur(16px);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+
+    /* Layout values */
+    --sidebar-width: 260px;
+    --bottom-nav-height: 70px;
+}
+
+/* Light Mode Variables Override */
+[data-theme="light"] {
+    --bg-main: #f8fafc;
+    --bg-sidebar: rgba(255, 255, 255, 0.85);
+    --bg-card: #ffffff;
+    --bg-card-hover: #ffffff;
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-color-focus: rgba(37, 99, 235, 0.5);
+    
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    
+    --glass-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+    
+    --primary: #2563eb;
+    --primary-glow: rgba(37, 99, 235, 0.15);
+
+    /* Form & Surface Tokens (Light) */
+    --bg-input: #ffffff;
+    --bg-input-focus: #ffffff;
+    --border-input: rgba(0, 0, 0, 0.15);
+    --border-input-focus: rgba(37, 99, 235, 0.6);
+    --text-placeholder: #94a3b8;
+    --bg-control: rgba(0, 0, 0, 0.04);
+}
+

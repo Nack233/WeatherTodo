@@ -10,84 +10,25 @@ import { LocationPickerModal, LocationChips } from './location-picker';
 import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
 import { getWeatherMeta } from '@/utils/weather-codes';
 
-// ============================================================
-// Types
-// ============================================================
-interface WeatherInfo {
-    current: {
-        time: string;
-        temperature_2m: number;
-        relative_humidity_2m: number;
-        apparent_temperature: number;
-        precipitation: number;
-        weather_code: number;
-        cloud_cover: number;
-        wind_speed_10m: number;
-    };
-    hourly: {
-        time: string[];
-        temperature_2m: number[];
-        weather_code: number[];
-        precipitation_probability: number[];
-    };
-    daily: {
-        time: string[];
-        weather_code: number[];
-        temperature_2m_max: number[];
-        temperature_2m_min: number[];
-        precipitation_probability_max: number[];
-    };
-}
-
-interface WeatherCacheEntry {
-    timestamp: number;
-    data: WeatherInfo;
-}
-
-type WeatherCache = Record<string, WeatherCacheEntry>;
-
-// ============================================================
-// Helpers
-// ============================================================
-const STORAGE_KEY_LOCATIONS = 'weather_saved_locations';
-const STORAGE_KEY_ACTIVE = 'weather_active_location';
-
-function loadSavedLocations(): SavedLocation[] {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY_LOCATIONS);
-        if (raw) {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-        }
-    } catch { /* ignore */ }
-    return DEFAULT_LOCATIONS;
-}
-
-function saveLocations(locations: SavedLocation[]) {
-    localStorage.setItem(STORAGE_KEY_LOCATIONS, JSON.stringify(locations));
-}
-
-function loadActiveId(locations: SavedLocation[]): string {
-    try {
-        const saved = localStorage.getItem(STORAGE_KEY_ACTIVE);
-        if (saved && locations.some((l) => l.id === saved)) return saved;
-    } catch { /* ignore */ }
-    return locations[0]?.id || '';
-}
-
-function cacheKeyFor(loc: SavedLocation): string {
-    return `weather_${loc.lat.toFixed(4)}_${loc.lon.toFixed(4)}`;
-}
+import { useWeather, type WeatherInfo } from '@/hooks/use-weather';
 
 // ============================================================
 // Component
 // ============================================================
 export default function Weather() {
-    const [locations, setLocations] = useState<SavedLocation[]>([]);
-    const [activeId, setActiveId] = useState<string>('');
-    const [weatherData, setWeatherData] = useState<WeatherInfo | null>(null);
-    const [updateTime, setUpdateTime] = useState<string>('--:--');
-    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const {
+        locations,
+        activeId,
+        activeLocation,
+        weatherData,
+        updateTime,
+        isLoading,
+        fetchWeather,
+        selectLocation,
+        addLocation,
+        removeLocation,
+    } = useWeather();
+
     const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
     const [hourlyViewMode, setHourlyViewMode] = useState<'next24' | 'today'>('next24');
 
@@ -152,12 +93,7 @@ export default function Weather() {
         }
     }, [weatherData, hourlyViewMode]);
 
-    // Init from localStorage
-    useEffect(() => {
-        const locs = loadSavedLocations();
-        setLocations(locs);
-        setActiveId(loadActiveId(locs));
-    }, []);
+
 
     const renderWeatherIcon = (iconName: string, className?: string) => {
         switch(iconName) {
@@ -235,122 +171,7 @@ export default function Weather() {
             .slice(0, 24);
     };
 
-    const fetchWeather = useCallback(async (loc: SavedLocation, force = false) => {
-        setIsLoading(true);
-        const cKey = cacheKeyFor(loc);
-        const cacheAgeLimit = 15 * 60 * 1000; // 15 mins
-        const now = Date.now();
-
-        // Check LocalStorage cache
-        const cacheStr = localStorage.getItem('weather_cache');
-        let cacheObj: WeatherCache = {};
-        if (cacheStr) {
-            try {
-                const parsedCache = JSON.parse(cacheStr) as Partial<WeatherCache>;
-                cacheObj = parsedCache as WeatherCache;
-            } catch {
-                cacheObj = {};
-            }
-        }
-
-        const cachedEntry = cacheObj[cKey];
-        if (!force && cachedEntry && isValidWeatherCache(cachedEntry.data) && (now - cachedEntry.timestamp < cacheAgeLimit)) {
-            setWeatherData(cachedEntry.data);
-            const timeObj = new Date(cachedEntry.timestamp);
-            setUpdateTime(`อัปเดตล่าสุด: ${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`);
-            setIsLoading(false);
-            return;
-        }
-
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Bangkok`;
-        
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('API fetch failed');
-            const data = await response.json();
-            
-            if (isValidWeatherCache(data)) {
-                // Update cache
-                cacheObj[cKey] = {
-                    timestamp: now,
-                    data: data
-                };
-                localStorage.setItem('weather_cache', JSON.stringify(cacheObj));
-                
-                setWeatherData(data);
-                const timeObj = new Date(now);
-                setUpdateTime(`อัปเดตล่าสุด: ${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.`);
-            } else {
-                throw new Error('Invalid weather data structure received');
-            }
-        } catch (error) {
-            console.error('Error fetching weather:', error);
-            // Fallback to old cache if valid
-            if (cachedEntry && isValidWeatherCache(cachedEntry.data)) {
-                setWeatherData(cachedEntry.data);
-                const timeObj = new Date(cachedEntry.timestamp);
-                setUpdateTime(`แคชเก่า (${timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.)`);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    // Fetch weather when active location changes
-    useEffect(() => {
-        if (!activeId || locations.length === 0) return;
-        const loc = locations.find((l) => l.id === activeId);
-        if (!loc) return;
-
-        localStorage.setItem(STORAGE_KEY_ACTIVE, activeId);
-        const timer = window.setTimeout(() => {
-            void fetchWeather(loc);
-        }, 0);
-
-        return () => window.clearTimeout(timer);
-    }, [activeId, locations, fetchWeather]);
-
-    // Handlers
-    const handleAddLocation = (loc: SavedLocation) => {
-        const updated = [...locations, loc];
-        setLocations(updated);
-        saveLocations(updated);
-        setActiveId(loc.id);
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('weather_location_change'));
-        }
-    };
-
-    const handleRemoveLocation = (id: string) => {
-        const updated = locations.filter((l) => l.id !== id);
-        if (updated.length === 0) {
-            // Don't allow removing all — reset to defaults
-            setLocations(DEFAULT_LOCATIONS);
-            saveLocations(DEFAULT_LOCATIONS);
-            setActiveId(DEFAULT_LOCATIONS[0].id);
-            if (typeof window !== 'undefined') {
-                window.dispatchEvent(new CustomEvent('weather_location_change'));
-            }
-            return;
-        }
-        setLocations(updated);
-        saveLocations(updated);
-        if (activeId === id) {
-            setActiveId(updated[0].id);
-        }
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('weather_location_change'));
-        }
-    };
-
-    const handleSelectLocation = (id: string) => {
-        setActiveId(id);
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('weather_location_change'));
-        }
-    };
-
-    const activeLoc = locations.find((l) => l.id === activeId);
+    const activeLoc = activeLocation;
     const currentMeta = weatherData ? getWeatherMeta(weatherData.current.weather_code) : { text: 'กำลังโหลด...', icon: 'sun' };
     const hourlyForecast = weatherData ? getHourlyForecast(weatherData, hourlyViewMode) : [];
     const maxHourlyRainChance = hourlyForecast.length > 0 ? Math.max(...hourlyForecast.map((item) => item.precipitationProbability)) : 0;
@@ -380,8 +201,8 @@ export default function Weather() {
             <LocationChips
                 locations={locations}
                 activeId={activeId}
-                onSelect={handleSelectLocation}
-                onRemove={handleRemoveLocation}
+                onSelect={selectLocation}
+                onRemove={removeLocation}
                 onAddClick={() => setIsPickerOpen(true)}
             />
 
@@ -663,7 +484,7 @@ export default function Weather() {
             <LocationPickerModal
                 isOpen={isPickerOpen}
                 onClose={() => setIsPickerOpen(false)}
-                onAddLocation={handleAddLocation}
+                onAddLocation={addLocation}
                 existingLocations={locations}
             />
         </div>

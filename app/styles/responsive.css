@@ -1,0 +1,173 @@
+/* ==========================================
+   RESPONSIVENESS (MOBILE-FIRST PRINCIPLE)
+   ========================================== */
+
+/* Tablet view styling */
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+    .weather-detail-layout {
+        grid-template-columns: 1fr;
+    }
+    .weather-side-column {
+        gap: 1.25rem;
+    }
+    .todo-layout {
+        grid-template-columns: 1fr;
+    }
+    .calendar-layout {
+        grid-template-columns: 1fr;
+    }
+    .tracker-layout {
+        grid-template-columns: 1fr;
+    }
+    .transactions-list-card {
+        grid-column: span 1;
+    }
+    .hourly-forecast-item {
+        grid-template-columns: 0.75fr 1.5fr 0.65fr 0.9fr;
+    }
+    .loc-region-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Phone layout styling */
+@media (max-width: 768px) {
+    /* Hide desktop sidebar */
+    .sidebar {
+        display: none;
+    }
+
+    /* Shrink main content margins and padding */
+    .main-content {
+        margin-left: 0;
+        padding: 1.5rem;
+        padding-bottom: calc(var(--bottom-nav-height) + 1.5rem);
+    }
+
+    .main-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .hourly-forecast-item {
+        grid-template-columns: 1fr 1fr;
+        row-gap: 0.35rem;
+    }
+
+    .hourly-condition,
+    .hourly-temp,
+    .hourly-rain-prob {
+        justify-self: start;
+        text-align: left;
+    }
+
+    /* Show Bottom Navigation Bar */
+    .bottom-nav {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: var(--bottom-nav-height);
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: var(--glass-blur);
+        -webkit-backdrop-filter: var(--glass-blur);
+        border-top: 1px solid var(--border-color);
+        z-index: 1000;
+        padding: 0.5rem 0.25rem;
+    }
+
+    .bottom-nav-item {
+        background: transparent;
+        border: none;
+        outline: none;
+        color: var(--text-secondary);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        cursor: pointer;
+        flex-grow: 1;
+        transition: all 0.2s ease;
+    }
+    .bottom-nav-item svg {
+        width: 20px;
+        height: 20px;
+    }
+    .bottom-nav-item.active {
+        color: var(--accent-cyan);
+    }
+    
+    /* Responsive stats for tracker */
+    .finance-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    .temp-condition {
+        gap: 1.5rem;
+    }
+    .giant-temp {
+        font-size: 3.5rem;
+    }
+    .weather-huge-icon {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .list-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .list-filters {
+        width: 100%;
+    }
+    .list-filters input,
+    .list-filters select {
+        flex: 1;
+        max-width: none;
+    }
+
+    /* Location Picker mobile */
+    .loc-modal {
+        max-width: 100%;
+        max-height: 90vh;
+        border-radius: 16px;
+    }
+    .loc-modal-backdrop {
+        padding: 0.75rem;
+    }
+    .loc-modal-body {
+        padding: 1rem;
+    }
+    .loc-region-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.6rem;
+    }
+    .loc-region-card {
+        padding: 1rem 0.75rem;
+    }
+    .loc-region-icon {
+        font-size: 1.5rem;
+    }
+    .loc-region-name {
+        font-size: 0.88rem;
+    }
+    .loc-chips-bar {
+        gap: 0.5rem;
+    }
+    .loc-chip-name {
+        max-width: 80px;
+    }
+    .loc-chip-district {
+        display: none;
+    }
+}
+

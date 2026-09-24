@@ -1,0 +1,307 @@
+/* ==========================================
+   LIGHT MODE COMPREHENSIVE CONTRAST & UI FIXES
+   ========================================== */
+
+/* Form inputs & Selects */
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="email"],
+[data-theme="light"] input[type="password"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="date"],
+[data-theme="light"] input[type="time"],
+[data-theme="light"] textarea,
+[data-theme="light"] select {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] input:focus,
+[data-theme="light"] textarea:focus,
+[data-theme="light"] select:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14) !important;
+    background: #ffffff !important;
+}
+
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] select option {
+    background: #ffffff !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: none !important;
+    opacity: 0.6;
+}
+
+[data-theme="light"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
+[data-theme="light"] input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 0.9;
+}
+
+/* Buttons */
+[data-theme="light"] .btn-primary {
+    background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.28) !important;
+}
+
+[data-theme="light"] .btn-primary:hover {
+    background: linear-gradient(135deg, #1d4ed8, #0891b2) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.38) !important;
+}
+
+[data-theme="light"] .btn:not(.btn-primary):not(.btn-google):not(.btn-logout) {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: #1e293b;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .btn:not(.btn-primary):not(.btn-google):not(.btn-logout):hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .btn-logout {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #dc2626;
+}
+
+[data-theme="light"] .btn-logout:hover {
+    background: rgba(239, 68, 68, 0.15);
+    color: #b91c1c;
+}
+
+/* Transaction type switchers (Tracker Tab) */
+[data-theme="light"] .type-selector {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .type-btn {
+    color: #64748b;
+}
+
+[data-theme="light"] .type-btn:hover:not(.active) {
+    background: rgba(0, 0, 0, 0.04);
+    color: #0f172a;
+}
+
+[data-theme="light"] .type-btn.income.active {
+    background: #10b981;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="light"] .type-btn.expense.active {
+    background: #ef4444;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(239, 68, 68, 0.25);
+}
+
+/* Todo and Weather filter tabs */
+[data-theme="light"] .todo-filters,
+[data-theme="light"] .weather-controls {
+    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .filter-btn,
+[data-theme="light"] .btn-toggle {
+    color: #64748b;
+}
+
+[data-theme="light"] .filter-btn.active,
+[data-theme="light"] .btn-toggle.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* List items, cards & widgets */
+[data-theme="light"] .todo-item,
+[data-theme="light"] .event-item {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .todo-item:hover,
+[data-theme="light"] .event-item:hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.14);
+}
+
+[data-theme="light"] .todo-progress-summary {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .progress-bar {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .quick-list li,
+[data-theme="light"] .quick-event-item,
+[data-theme="light"] .finance-mini-stat {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .calendar-day {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .calendar-day:hover {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="light"] .calendar-day.today {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: #2563eb;
+}
+
+[data-theme="light"] .calendar-day.selected {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+[data-theme="light"] .fuel-metric,
+[data-theme="light"] .fuel-brand-price,
+[data-theme="light"] .fuel-item-row,
+[data-theme="light"] .fuel-meta-row span {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .fuel-item-row:hover {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .hourly-forecast-item,
+[data-theme="light"] .forecast-item {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .hourly-forecast-item:hover,
+[data-theme="light"] .forecast-item:hover {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .category-badge {
+    background: rgba(0, 0, 0, 0.05);
+    color: #475569;
+}
+
+[data-theme="light"] .location-badge {
+    background: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #475569;
+}
+
+[data-theme="light"] .nav-item:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .nav-item.active {
+    background: rgba(37, 99, 235, 0.08);
+    border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+[data-theme="light"] .header-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .header-btn:hover {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.18);
+}
+
+[data-theme="light"] .bottom-nav {
+    background: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .transaction-table tbody tr:hover {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .checkbox-wrapper .checkmark {
+    border-color: #94a3b8;
+}
+
+/* Location Picker — Light Mode Overrides */
+[data-theme="light"] .loc-chip {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #475569;
+}
+[data-theme="light"] .loc-chip:hover {
+    background: #f8fafc;
+}
+[data-theme="light"] .loc-chip.active {
+    background: rgba(37, 99, 235, 0.08);
+    border-color: #2563eb;
+    color: #0f172a;
+    box-shadow: 0 0 12px rgba(37, 99, 235, 0.1);
+}
+[data-theme="light"] .loc-chip.active svg:first-child {
+    color: #2563eb;
+}
+[data-theme="light"] .loc-add-btn {
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #2563eb;
+}
+[data-theme="light"] .loc-add-btn:hover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.05);
+}
+[data-theme="light"] .loc-modal {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.15);
+}
+[data-theme="light"] .loc-modal-backdrop {
+    background: rgba(0, 0, 0, 0.35);
+}
+[data-theme="light"] .loc-breadcrumb {
+    background: #f8fafc;
+}
+[data-theme="light"] .loc-region-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+[data-theme="light"] .loc-region-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+[data-theme="light"] .loc-province-btn:hover {
+    background: #f1f5f9;
+}
+[data-theme="light"] .loc-search-result-item:hover:not(:disabled) {
+    background: #f1f5f9;
+}
+[data-theme="light"] .loc-back-btn:hover,
+[data-theme="light"] .loc-close-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+

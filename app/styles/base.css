@@ -1,0 +1,70 @@
+/* ==========================================
+   GLOBAL RESET & STYLING
+   ========================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    overflow-x: hidden;
+    min-height: 100vh;
+    transition: background-color 0.4s ease, color 0.4s ease;
+    font-family: var(--font-primary);
+}
+
+/* Ambient glow blobs — promoted to compositor layer to avoid forced reflow */
+.bg-glow {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.6;
+    /* Promote to GPU compositor layer — eliminates main-thread reflow from blur */
+    will-change: opacity;
+    contain: layout style;
+    /* Avoid triggering reflow on theme transitions — only animate opacity */
+    transition: opacity 0.5s ease;
+}
+.bg-glow-1 {
+    top: -10%;
+    left: -10%;
+    width: 50vw;
+    height: 50vh;
+    background: radial-gradient(circle, var(--accent-cyan-glow) 0%, transparent 70%);
+}
+.bg-glow-2 {
+    bottom: -10%;
+    right: -10%;
+    width: 60vw;
+    height: 60vh;
+    background: radial-gradient(circle, var(--accent-purple-glow) 0%, transparent 70%);
+}
+.bg-glow-3 {
+    top: 30%;
+    left: 40%;
+    width: 40vw;
+    height: 40vh;
+    background: radial-gradient(circle, var(--primary-glow) 0%, transparent 70%);
+}
+
+/* Hide scrollbars but preserve functionality */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
