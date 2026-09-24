@@ -118,10 +118,15 @@ export function useWeather() {
             return;
         }
 
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Bangkok`;
+        const proxyUrl = `/api/weather?lat=${loc.lat}&lon=${loc.lon}`;
+        const fallbackUrl = `https://api.open-meteo.com/v1/forecast?latitude=${loc.lat}&longitude=${loc.lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,cloud_cover,wind_speed_10m&hourly=temperature_2m,weather_code,precipitation_probability&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia/Bangkok`;
 
         try {
-            const response = await fetch(url);
+            let response = await fetch(proxyUrl);
+            if (!response.ok) {
+                // Fallback to direct Open-Meteo call if proxy is temporarily unavailable
+                response = await fetch(fallbackUrl);
+            }
             if (!response.ok) throw new Error('API fetch failed');
             const data = await response.json();
 

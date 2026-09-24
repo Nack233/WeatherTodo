@@ -111,14 +111,7 @@ function DashboardContent() {
 
     if (isLoading || !user) {
         return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100vh',
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-primary)'
-            }}>
+            <div className="loading-screen">
                 กำลังโหลด...
             </div>
         );
@@ -165,13 +158,11 @@ function DashboardContent() {
         <div className="app-container">
             {/* Sidebar Navigation (Desktop) */}
             <aside className="sidebar">
-                <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2.5rem' }}>
+                <div className="brand">
                     <Image src="/logo-daybase.png" alt="Day Base" width={34} height={34} className="brand-logo-img" priority />
                     <div>
-                        <span className="brand-name" style={{ fontSize: '1.25rem', fontWeight: 800 }}>Day Base</span>
-                        <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--accent-cyan)', fontWeight: 700, letterSpacing: '1px', marginTop: '-2px' }}>
-                            DAILY WORKSPACE
-                        </span>
+                        <span className="brand-name">Day Base</span>
+                        <span className="brand-subtitle">DAILY WORKSPACE</span>
                     </div>
                 </div>
                 <nav className="nav-menu">
@@ -219,14 +210,14 @@ function DashboardContent() {
                     </button>
                 </nav>
                 <div className="sidebar-footer">
-                    <div className="location-badge" style={{ borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                    <div className="location-badge">
+                        <div className="location-badge-inner">
                             <MapPin size={15} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                            <span style={{ fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{locationBadge}</span>
+                            <span className="location-badge-text">{locationBadge}</span>
                         </div>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)', flexShrink: 0 }} />
+                        <span className="location-badge-dot" />
                     </div>
-                    <button className="btn-logout" onClick={handleLogout} style={{ borderRadius: '12px' }}>
+                    <button className="btn-logout" onClick={handleLogout}>
                         <LogOut size={16} />
                         <span>ออกจากระบบ</span>
                     </button>
@@ -236,14 +227,14 @@ function DashboardContent() {
             {/* Main Content Area */}
             <main className="main-content">
                 {/* Header */}
-                <header className="main-header" style={{ backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+                <header className="main-header">
                     <div className="header-info">
-                        <h1 id="page-title" style={{ fontWeight: 800, letterSpacing: '-0.5px' }}>{getPageTitle()}</h1>
-                        <p id="current-date-display" style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>{currentDateStr}</p>
+                        <h1 id="page-title">{getPageTitle()}</h1>
+                        <p id="current-date-display">{currentDateStr}</p>
                     </div>
                     <div className="header-actions">
-                        <div className="header-username" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.4rem 0.9rem', borderRadius: '999px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-color)' }}>
-                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent-cyan), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.72rem', fontWeight: 700, color: '#fff' }}>
+                        <div className="header-user-badge">
+                            <div className="header-user-avatar">
                                 {user.name ? user.name.slice(0, 1).toUpperCase() : 'U'}
                             </div>
                             <span style={{ fontSize: '0.88rem', fontWeight: 600 }}>สวัสดี, {user.name}</span>
@@ -253,7 +244,6 @@ function DashboardContent() {
                             className="header-btn" 
                             onClick={toggleTheme} 
                             title={theme === 'dark' ? 'เปลี่ยนเป็นธีมสว่าง' : 'เปลี่ยนเป็นธีมมืด'}
-                            style={{ borderRadius: '12px', border: '1px solid var(--border-color)' }}
                         >
                             {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                         </button>
