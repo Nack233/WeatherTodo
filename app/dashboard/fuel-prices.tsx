@@ -2,7 +2,11 @@
 
 import React, { useEffect, useState } from 'react';
 import { RefreshCw, Fuel, Globe, BadgeInfo, Clock3, Database, ChevronRight } from 'lucide-react';
-import { groupFuelRows, type FuelBrandBlock, type FuelPriceSnapshot } from '@/app/actions/fuel-actions';
+import {
+    groupFuelRows,
+    type FuelBrandBlock,
+    type FuelPriceSnapshot,
+} from '@/supabase/functions/_shared/fuel-sync';
 
 export default function FuelPrices() {
     const [data, setData] = useState<FuelPriceSnapshot | null>(null);

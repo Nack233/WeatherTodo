@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useAuth, useTheme } from '../providers';
 import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
 import dynamic from 'next/dynamic';
@@ -48,7 +47,6 @@ import {
 export default function DashboardPage() {
     const { user, logout, isLoading } = useAuth();
     const { theme, toggleTheme } = useTheme();
-    const router = useRouter();
 
     const [activeTab, setActiveTab] = useState<string>('dashboard');
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
@@ -81,12 +79,8 @@ export default function DashboardPage() {
         };
     }, []);
 
-    // Protected Route Verification
-    useEffect(() => {
-        if (!isLoading && !user) {
-            router.replace('/login');
-        }
-    }, [user, isLoading, router]);
+    // Route protection is handled by middleware (utils/supabase/middleware.ts)
+    // No client-side auth guard needed here.
 
     // Local Date display
     useEffect(() => {
@@ -143,7 +137,8 @@ export default function DashboardPage() {
 
     const handleLogout = async () => {
         await logout();
-        router.replace('/login');
+        // Middleware will redirect to /login on next navigation
+        window.location.href = '/login';
     };
 
 
