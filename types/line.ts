@@ -196,6 +196,7 @@ export interface AiIntentResult {
         note?: string;
     };
     link_account?: {
+        code?: string;
         email?: string;
     };
     chat_response?: string;

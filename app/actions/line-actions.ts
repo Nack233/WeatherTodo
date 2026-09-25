@@ -82,3 +82,85 @@ export async function unlinkLineAccount(): Promise<ActionResult<boolean>> {
         return { error: message };
     }
 }
+
+export interface PairingCodeResult {
+    code: string;
+    expiresAt: number;
+}
+
+/**
+ * Generate a secure 6-digit one-time pairing code for linking LINE account
+ * Valid for 10 minutes.
+ */
+export async function generateLinePairingCode(): Promise<ActionResult<PairingCodeResult>> {
+    try {
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' };
+        }
+
+        const { createAdminClient } = await import('@/utils/supabase/admin');
+        const admin = createAdminClient();
+
+        // 6-digit random numeric pairing code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+        const { error: updateError } = await admin.auth.admin.updateUserById(user.id, {
+            user_metadata: {
+                ...user.user_metadata,
+                line_pairing_code: code,
+                line_pairing_expires: expiresAt,
+            },
+        });
+
+        if (updateError) {
+            return { error: updateError.message };
+        }
+
+        return {
+            data: {
+                code,
+                expiresAt,
+            },
+        };
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการสร้างรหัสผูกบัญชี';
+        return { error: message };
+    }
+}
+
+/**
+ * Retrieve current active pairing code if still valid
+ */
+export async function getActivePairingCode(): Promise<ActionResult<PairingCodeResult | null>> {
+    try {
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อน' };
+        }
+
+        const meta = user.user_metadata;
+        const code = meta?.line_pairing_code;
+        const expiresAt = Number(meta?.line_pairing_expires);
+
+        if (code && expiresAt && expiresAt > Date.now()) {
+            return {
+                data: {
+                    code,
+                    expiresAt,
+                },
+            };
+        }
+
+        return { data: null };
+    } catch (err) {
+        const message = err instanceof Error ? err.message : 'เกิดข้อผิดพลาดในการดึงรหัสผูกบัญชี';
+        return { error: message };
+    }
+}
+

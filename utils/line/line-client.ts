@@ -19,7 +19,14 @@ export function validateLineSignature(
         .update(Buffer.from(body, 'utf-8'))
         .digest('base64');
 
-    return hash === signature;
+    const hashBuffer = Buffer.from(hash);
+    const sigBuffer = Buffer.from(signature);
+
+    if (hashBuffer.length !== sigBuffer.length) {
+        return false;
+    }
+
+    return crypto.timingSafeEqual(hashBuffer, sigBuffer);
 }
 
 /**

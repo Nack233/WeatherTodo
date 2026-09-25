@@ -7,13 +7,18 @@ import { callOpenRouterCompletion, extractJsonFromText } from '@/utils/openroute
 function fallbackIntentParser(message: string, todayStr: string): AiIntentResult {
     const trimmed = message.trim();
 
-    // Link account
-    const linkMatch = trimmed.match(/ผูกบัญชี\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/i);
+    // Link account with pairing code or email
+    const linkMatch = trimmed.match(/ผูกบัญชี\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|\d{6})/i) || (trimmed.startsWith('ผูกบัญชี') ? [trimmed, ''] : null);
     if (linkMatch) {
+        const val = linkMatch[1] || '';
+        const isEmail = val.includes('@');
         return {
             action: 'link_account',
             confidence: 0.95,
-            link_account: { email: linkMatch[1] },
+            link_account: {
+                email: isEmail ? val : undefined,
+                code: !isEmail && /^\d{6}$/.test(val) ? val : undefined,
+            },
         };
     }
 
@@ -172,8 +177,8 @@ Action Types ที่เป็นไปได้:
    - สกัด: amount (ตัวเลข), type ("expense"|"income"), category ("อาหาร"|"เดินทาง"|"ช้อปปิ้ง"|"บิลและที่อยู่"|"สุขภาพ"|"ความบันเทิง"|"เงินเดือน"|"อื่นๆ"), note (หมายเหตุสั้นๆ)
 5. "list_expenses": ผู้ใช้ต้องการดูยอดเงิน/สรุปรายรับรายจ่าย
 6. "get_weather": ผู้ใช้ถามเรื่องสภาพอากาศ ฝนตก อุณหภูมิ
-7. "link_account": ผู้ใช้พิมพ์อีเมลหรือแจ้งต้องการผูกบัญชี
-   - สกัด: email
+7. "link_account": ผู้ใช้ต้องการผูกบัญชี หรือส่งรหัสผูกบัญชี (pairing code) 6 หลัก หรือพิมพ์อีเมล
+   - สกัด: code (รหัส 6 หลัก เช่น "123456"), email (หากผู้ใช้ระบุอีเมล)
 8. "help": ผู้ใช้ถามวิธีใช้งาน หรือพิมพ์ help/?
 9. "general_chat": ข้อความทักทาย หรือคำถามทั่วไปที่ไม่เข้าหมวดหมู่ข้างต้น
    - สกัด: chat_response (คำตอบภาษาไทยสไตล์สาวน้อยน่ารัก สดใส มีพลังบวก)
@@ -186,7 +191,7 @@ Action Types ที่เป็นไปได้:
   "todo": { "title": string, "priority": "low"|"medium"|"high", "due_date": "YYYY-MM-DD" | null, "category": string },
   "complete_todo": { "keyword": string },
   "expense": { "amount": number, "type": "expense"|"income", "category": string, "note": string },
-  "link_account": { "email": string },
+  "link_account": { "code": string, "email": string },
   "chat_response": string
 }
 - หากผู้ใช้สั่งงานหลายอย่างในประโยคเดียว ให้ส่งออกเป็น JSON Array ของ Object ข้างต้น เช่น [ { "action": "add_todo", ... }, { "action": "add_todo", ... } ]`;

@@ -10,10 +10,16 @@ import { ensureProfileExists } from '@/utils/supabase/profile';
 export async function getTodos(): Promise<ActionResult<Todo[]>> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อน' };
+        }
 
         const { data, error } = await supabase
             .from('todos')
             .select('id, user_id, title, description, completed, priority, due_date, created_at, updated_at')
+            .eq('user_id', user.id)
             .order('completed', { ascending: true })
             .order('due_date', { ascending: true, nullsFirst: false })
             .order('created_at', { ascending: false });
@@ -77,11 +83,17 @@ export async function createTodo(input: TodoInsert): Promise<ActionResult<Todo>>
 export async function updateTodo(id: string, input: TodoUpdate): Promise<ActionResult<Todo>> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อน' };
+        }
 
         const { data, error } = await supabase
             .from('todos')
             .update(input)
             .eq('id', id)
+            .eq('user_id', user.id)
             .select()
             .single();
 
@@ -104,11 +116,17 @@ export async function updateTodo(id: string, input: TodoUpdate): Promise<ActionR
 export async function toggleTodo(id: string, completed: boolean): Promise<ActionResult<Todo>> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อน' };
+        }
 
         const { data, error } = await supabase
             .from('todos')
             .update({ completed })
             .eq('id', id)
+            .eq('user_id', user.id)
             .select()
             .single();
 
@@ -131,11 +149,17 @@ export async function toggleTodo(id: string, completed: boolean): Promise<Action
 export async function deleteTodo(id: string): Promise<ActionResult> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อน' };
+        }
 
         const { error } = await supabase
             .from('todos')
             .delete()
-            .eq('id', id);
+            .eq('id', id)
+            .eq('user_id', user.id);
 
         if (error) {
             console.error('[deleteTodo]', error.message);

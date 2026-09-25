@@ -10,10 +10,16 @@ import { ensureProfileExists } from '@/utils/supabase/profile';
 export async function getCalendarEvents(): Promise<ActionResult<CalendarEvent[]>> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' };
+        }
 
         const { data, error } = await supabase
             .from('calendar_events')
             .select('id, user_id, title, description, start_date, end_date, all_day, color, created_at, updated_at')
+            .eq('user_id', user.id)
             .order('start_date', { ascending: true });
 
         if (error) {
@@ -74,11 +80,17 @@ export async function createCalendarEvent(input: CalendarEventInsert): Promise<A
 export async function deleteCalendarEvent(id: string): Promise<ActionResult> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' };
+        }
 
         const { error } = await supabase
             .from('calendar_events')
             .delete()
-            .eq('id', id);
+            .eq('id', id)
+            .eq('user_id', user.id);
 
         if (error) {
             console.error('[deleteCalendarEvent]', error.message);

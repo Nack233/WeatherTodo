@@ -1,14 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
+// In-memory rate limiter per user (15 requests per minute window)
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const MAX_REQUESTS_PER_WINDOW = 15;
+const rateLimitMap = new Map<string, number[]>();
+
+function checkRateLimit(key: string): boolean {
+    const now = Date.now();
+    const timestamps = (rateLimitMap.get(key) || []).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
+    if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+        return false;
+    }
+    timestamps.push(now);
+    rateLimitMap.set(key, timestamps);
+    return true;
+}
+
 export async function POST(request: NextRequest) {
     try {
+        // SECURITY: Require authenticated user session to prevent API quota/financial drain
+        const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json(
+                { error: 'Unauthorized. Please login to use Text-to-Speech.' },
+                { status: 401 }
+            );
+        }
+
+        // Rate limiting per authenticated user
+        if (!checkRateLimit(user.id)) {
+            return NextResponse.json(
+                { error: 'Too many requests. Please wait a moment before trying again.' },
+                { status: 429 }
+            );
+        }
+
         const body = await request.json();
         const text = body.text?.trim();
 
         if (!text) {
             return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+        }
+
+        // SECURITY: Limit maximum text length to prevent credit exhaustion
+        if (text.length > 500) {
+            return NextResponse.json(
+                { error: 'Text too long. Maximum allowed is 500 characters.' },
+                { status: 400 }
+            );
         }
 
         const apiKey = process.env.ELEVENLABS_API_KEY;

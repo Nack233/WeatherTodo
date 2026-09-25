@@ -17,6 +17,9 @@ interface MascotModalProps {
     checkStatus: () => void;
     userEmail: string;
     commandText: string;
+    pairingCode?: string | null;
+    isGeneratingCode?: boolean;
+    handleGenerateNewCode?: () => void;
     copied: boolean;
     handleCopyCommand: () => void;
 }
@@ -29,6 +32,9 @@ export function MascotModal({
     checkStatus,
     userEmail,
     commandText,
+    pairingCode,
+    isGeneratingCode,
+    handleGenerateNewCode,
     copied,
     handleCopyCommand,
 }: MascotModalProps) {
@@ -143,7 +149,7 @@ export function MascotModal({
                         <div className="step-item-wrapper" style={{ marginTop: '12px' }}>
                             <div className="step-header">
                                 <span className="step-num">2</span>
-                                <span>คัดลอกคำสั่งด้านล่างนี้ไปพิมพ์ส่งในแชท:</span>
+                                <span>คัดลอกคำสั่งพร้อมรหัสยืนยัน 6 หลักไปพิมพ์ส่งในแชท:</span>
                             </div>
 
                             {/* Quick Copy Box */}
@@ -166,6 +172,21 @@ export function MascotModal({
                                     )}
                                 </button>
                             </div>
+
+                            {pairingCode && handleGenerateNewCode && (
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px', fontSize: '0.75rem', color: '#94A3B8' }}>
+                                    <span>🔒 รหัสยืนยันปลอดภัย มีอายุ 10 นาที</span>
+                                    <button
+                                        type="button"
+                                        onClick={handleGenerateNewCode}
+                                        disabled={isGeneratingCode}
+                                        style={{ background: 'none', border: 'none', color: '#38BDF8', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem' }}
+                                    >
+                                        <RefreshCw size={11} className={isGeneratingCode ? 'animate-spin' : ''} />
+                                        <span>ขอรหัสใหม่</span>
+                                    </button>
+                                </div>
+                            )}
                         </div>
                     </div>
 

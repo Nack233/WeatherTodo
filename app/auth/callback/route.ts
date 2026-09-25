@@ -22,16 +22,20 @@ export async function GET(request: Request) {
                     // Non-blocking if profile upsert fails
                 }
 
-                const forwardedHost = request.headers.get('x-forwarded-host');
                 const isLocalEnv = process.env.NODE_ENV === 'development';
+                const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-                if (isLocalEnv) {
-                    return NextResponse.redirect(`${origin}${next}`);
-                } else if (forwardedHost) {
-                    return NextResponse.redirect(`https://${forwardedHost}${next}`);
-                } else {
-                    return NextResponse.redirect(`${origin}${next}`);
+                // SECURITY: Prevent Host Header Injection / Open Redirect by preferring configured siteUrl or request origin
+                let redirectOrigin = origin;
+                if (!isLocalEnv && siteUrl) {
+                    try {
+                        redirectOrigin = new URL(siteUrl).origin;
+                    } catch {
+                        redirectOrigin = origin;
+                    }
                 }
+
+                return NextResponse.redirect(`${redirectOrigin}${next}`);
             }
         } catch {
             return NextResponse.redirect(`${origin}/login?error=oauth_callback_failed`);

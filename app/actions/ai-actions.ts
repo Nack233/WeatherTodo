@@ -4,9 +4,18 @@ import { BriefingInputData, generateDailyBriefing } from '@/utils/ai-briefing';
 import { callOpenRouterCompletion, OpenRouterChatMessage } from '@/utils/openrouter';
 import { buildBriefingPrompt, buildNongBaseSystemPrompt, buildNongBaseChatPrompt } from '@/app/data/prompts';
 
+import { createClient } from '@/utils/supabase/server';
+
 export type AiSourceType = 'gemini' | 'openrouter' | 'synthesis';
 
 export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: string; source: AiSourceType }> {
+    // SECURITY: Ensure user is authenticated before calling AI APIs
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        throw new Error('Unauthorized');
+    }
+
     const prompt = buildBriefingPrompt(data);
 
     // 1. Try Gemini 3.5 Flash Lite first
@@ -64,7 +73,14 @@ export async function chatWithNongBase(
     history: { sender: 'user' | 'bot'; text: string }[],
     data: BriefingInputData
 ): Promise<{ reply: string; source: AiSourceType }> {
-    const trimmedMsg = message.trim();
+    // SECURITY: Ensure user is authenticated before calling AI APIs
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+        throw new Error('Unauthorized');
+    }
+
+    const trimmedMsg = message.trim().slice(0, 500);
     const systemPrompt = buildNongBaseSystemPrompt(data);
 
     // 1. Try Gemini first

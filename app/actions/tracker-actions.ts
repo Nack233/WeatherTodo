@@ -10,10 +10,16 @@ import { ensureProfileExists } from '@/utils/supabase/profile';
 export async function getExpenses(): Promise<ActionResult<Expense[]>> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' };
+        }
 
         const { data, error } = await supabase
             .from('expenses')
             .select('id, user_id, category_id, amount, type, note, transaction_date, created_at, updated_at, expense_categories(name)')
+            .eq('user_id', user.id)
             .order('transaction_date', { ascending: false })
             .order('created_at', { ascending: false });
 
@@ -118,11 +124,17 @@ export async function createExpense(input: ExpenseInsert): Promise<ActionResult<
 export async function deleteExpense(id: string): Promise<ActionResult> {
     try {
         const supabase = await createClient();
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { error: 'กรุณาเข้าสู่ระบบก่อนดำเนินการ' };
+        }
 
         const { error } = await supabase
             .from('expenses')
             .delete()
-            .eq('id', id);
+            .eq('id', id)
+            .eq('user_id', user.id);
 
         if (error) {
             console.error('[deleteExpense]', error.message);

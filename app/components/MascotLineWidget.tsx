@@ -21,7 +21,10 @@ export default function MascotLineWidget({ userEmail = '', userName = 'คุณ
         isLoading,
         copied,
         commandText,
+        pairingCode,
+        isGeneratingCode,
         checkStatus,
+        handleGenerateNewCode,
         handleCopyCommand,
     } = useMascotStatus(userEmail);
 
@@ -90,6 +93,9 @@ export default function MascotLineWidget({ userEmail = '', userName = 'คุณ
                 checkStatus={checkStatus}
                 userEmail={userEmail}
                 commandText={commandText}
+                pairingCode={pairingCode}
+                isGeneratingCode={isGeneratingCode}
+                handleGenerateNewCode={handleGenerateNewCode}
                 copied={copied}
                 handleCopyCommand={handleCopyCommand}
             />

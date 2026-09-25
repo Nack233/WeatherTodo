@@ -51,24 +51,7 @@ export async function resolveUserId(lineUserId: string): Promise<string | null> 
             return lineAccount.user_id;
         }
 
-        // 2. If no direct binding found, check if there's only 1 profile in the database
-        // (Enables seamless zero-friction setup for single-user dashboard)
-        const { data: profiles } = await supabase
-            .from('profiles')
-            .select('id')
-            .limit(2);
-
-        if (profiles && profiles.length === 1) {
-            const singleUserId = profiles[0].id;
-            // Auto-link for convenience
-            await supabase.from('line_accounts').upsert({
-                line_user_id: lineUserId,
-                user_id: singleUserId,
-                display_name: 'LINE User',
-            });
-            return singleUserId;
-        }
-
+        // Return null if not linked (fail-closed for security)
         return null;
     } catch (err) {
         console.error('[LINE Service] resolveUserId error:', err);
@@ -77,38 +60,81 @@ export async function resolveUserId(lineUserId: string): Promise<string | null> 
 }
 
 /**
- * Link LINE User ID to a Supabase user by email
+ * Link LINE User ID to a Supabase user via secure 6-digit Pairing Code generated from Dashboard
  */
-export async function linkAccountByEmail(lineUserId: string, email: string): Promise<boolean> {
+export async function linkAccountByCode(lineUserId: string, inputCode: string): Promise<{ success: boolean; message: string }> {
     try {
+        const cleanCode = inputCode.replace(/[^0-9]/g, '').trim();
+        if (cleanCode.length !== 6) {
+            return {
+                success: false,
+                message: 'รหัสผูกบัญชีต้องเป็นตัวเลข 6 หลักค่า เช่น "ผูกบัญชี 123456" ตรวจสอบรหัสได้จากหน้าเว็บ Dashboard นะคะ 💖',
+            };
+        }
+
         const supabase = createAdminClient();
 
-        // Search user in auth
+        // Search user with matching active pairing code in user_metadata
         const { data: authData, error: authError } = await supabase.auth.admin.listUsers();
         if (authError || !authData.users) {
             console.error('[LINE Service] listUsers error:', authError);
-            return false;
+            return {
+                success: false,
+                message: 'เกิดข้อผิดพลาดในการเชื่อมต่อระบบฐานข้อมูลชั่วคราว ลองใหม่อีกครั้งนะคะ',
+            };
         }
 
-        const matchedUser = authData.users.find(
-            u => u.email?.toLowerCase() === email.toLowerCase()
-        );
+        const now = Date.now();
+        const matchedUser = authData.users.find(u => {
+            const meta = u.user_metadata;
+            if (!meta?.line_pairing_code || !meta?.line_pairing_expires) return false;
+            return String(meta.line_pairing_code) === cleanCode && Number(meta.line_pairing_expires) > now;
+        });
 
         if (!matchedUser) {
-            return false;
+            return {
+                success: false,
+                message: 'ง่าา ไม่พบรหัสผูกบัญชีนี้ หรือรหัสอาจหมดอายุแล้วค่า 🥺\nกรุณากด "ขอรหัสผูกบัญชีใหม่" บนหน้าเว็บ Dashboard แล้วลองใหม่อีกครั้งน้า ✨',
+            };
         }
 
-        const { error } = await supabase.from('line_accounts').upsert({
+        // Upsert binding in line_accounts
+        const displayName = matchedUser.user_metadata?.full_name || matchedUser.user_metadata?.name || matchedUser.email || 'LINE User';
+        const { error: upsertError } = await supabase.from('line_accounts').upsert({
             line_user_id: lineUserId,
             user_id: matchedUser.id,
-            display_name: matchedUser.email || 'Linked User',
+            display_name: displayName,
             updated_at: new Date().toISOString(),
         });
 
-        return !error;
+        if (upsertError) {
+            console.error('[LINE Service] upsert error:', upsertError);
+            return {
+                success: false,
+                message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูลการผูกบัญชี กรุณาลองใหม่อีกครั้งนะคะ',
+            };
+        }
+
+        // Clear pairing code immediately so it cannot be reused
+        await supabase.auth.admin.updateUserById(matchedUser.id, {
+            user_metadata: {
+                ...matchedUser.user_metadata,
+                line_pairing_code: null,
+                line_pairing_expires: null,
+            },
+        });
+
+        const maskedEmail = (matchedUser.email || '').replace(/(.{2})(.*)(@.*)/, '$1***$3');
+        return {
+            success: true,
+            message: `เย้! ผูกบัญชี LINE กับ ${maskedEmail ? `อีเมล ${maskedEmail}` : 'บัญชีของคุณ'} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
+        };
     } catch (err) {
-        console.error('[LINE Service] linkAccountByEmail error:', err);
-        return false;
+        console.error('[LINE Service] linkAccountByCode error:', err);
+        return {
+            success: false,
+            message: 'เกิดข้อผิดพลาดที่ไม่คาดคิด กรุณาลองใหม่ในภายหลังนะคะ',
+        };
     }
 }
 
@@ -186,28 +212,41 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         return;
     }
 
-    // Handle Account Linking Request
-    if (firstIntent.action === 'link_account' && firstIntent.link_account?.email) {
-        const success = await linkAccountByEmail(lineUserId, firstIntent.link_account.email);
-        // SECURITY: Use identical-looking response to prevent user enumeration
-        const maskedEmail = firstIntent.link_account.email.replace(/(.{2})(.*)(@.*)/, '$1***$3');
-        if (success) {
+    // Handle Account Linking Request via Pairing Code
+    if (firstIntent.action === 'link_account') {
+        const rawCode = firstIntent.link_account?.code || text.match(/\d{6}/)?.[0];
+        const isEmailInput = Boolean(firstIntent.link_account?.email || text.includes('@'));
+
+        if (isEmailInput && !rawCode) {
             await replyLineMessage(replyToken, [
                 {
                     type: 'text',
-                    text: `เย้! ผูกบัญชี LINE กับอีเมล ${maskedEmail} สำเร็จเรียบร้อยแล้วค่า 🎉 ต่อไปนี้เรามาลุยงานไปด้วยกันนะค๊า ✨💖`,
+                    text: '🔒 เพื่อความปลอดภัยของข้อมูล บัญชีจะไม่สามารถผูกด้วยอีเมลตรงๆ ได้น้า ✨\n\n📌 วิธีผูกบัญชีที่ถูกต้อง:\n1. ล็อกอินบนหน้าเว็บ Dashboard\n2. กดที่รูปมาสคอตน้องเบสเพื่อขอ "รหัสผูกบัญชี 6 หลัก"\n3. นำรหัสมาพิมพ์ส่งให้เบส เช่น "ผูกบัญชี 123456" ได้เลยค่า 💖',
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);
-        } else {
-            await replyLineMessage(replyToken, [
-                {
-                    type: 'text',
-                    text: `ง่าา เบสไม่สามารถผูกบัญชีกับอีเมล ${maskedEmail} ได้ค่า 🥺 ลองตรวจสอบอีเมลที่ใช้สมัครบนหน้าเว็บอีกครั้งนะค๊า`,
-                    quickReply: DEFAULT_QUICK_REPLY,
-                },
-            ]);
+            return;
         }
+
+        if (!rawCode) {
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: '📌 วิธีผูกบัญชีกับ LINE Bot:\n1. ล็อกอินบนหน้าเว็บ Dashboard แล้วกดที่รูปมาสคอต\n2. คัดลอกรหัสผูกบัญชี 6 หลัก\n3. พิมพ์ส่งให้เบส เช่น "ผูกบัญชี 123456" ได้เลยนะคะ ✨💖',
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+            return;
+        }
+
+        const linkResult = await linkAccountByCode(lineUserId, rawCode);
+        await replyLineMessage(replyToken, [
+            {
+                type: 'text',
+                text: linkResult.message,
+                quickReply: DEFAULT_QUICK_REPLY,
+            },
+        ]);
         return;
     }
 
@@ -232,7 +271,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
         await replyLineMessage(replyToken, [
             {
                 type: 'text',
-                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ Day Base Dashboard น้า ✨\n\n📌 วิธีผูกบัญชีง่ายม๊าก:\nพิมพ์คำว่า: "ผูกบัญชี อีเมลของคุณ" ได้เลยค่า เช่น\n👉 ผูกบัญชี ' + (firstIntent.link_account?.email || 'your-email@gmail.com'),
+                text: '👋 สวัสดีค่า! บัญชี LINE ยังไม่ได้ผูกกับระบบ Day Base Dashboard น้า ✨\n\n📌 วิธีเชื่อมต่อบัญชี:\n1. เข้าสู่ระบบบนหน้าเว็บ Dashboard\n2. กดรูปมาสคอตน้องเบส แล้วคัดลอก "รหัสผูกบัญชี 6 หลัก"\n3. นำรหัสมาพิมพ์บอกเบส เช่น "ผูกบัญชี 123456" ได้เลยค่า 💖',
                 quickReply: DEFAULT_QUICK_REPLY,
             },
         ]);
