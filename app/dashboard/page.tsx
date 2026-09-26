@@ -59,18 +59,44 @@ function DashboardContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const tabParam = searchParams.get('tab');
-    const activeTab: TabType = isValidTab(tabParam) ? tabParam : 'dashboard';
+    const [activeTab, setActiveTab] = useState<TabType>(() => (isValidTab(tabParam) ? tabParam : 'dashboard'));
+
+    // Sync state if URL searchParams changes externally
+    useEffect(() => {
+        const currentTab = isValidTab(tabParam) ? tabParam : 'dashboard';
+        setActiveTab(currentTab);
+    }, [tabParam]);
+
+    // Handle browser Back / Forward buttons explicitly
+    useEffect(() => {
+        const handlePopState = () => {
+            const currentParams = new URLSearchParams(window.location.search);
+            const currentTab = currentParams.get('tab');
+            setActiveTab(isValidTab(currentTab) ? currentTab : 'dashboard');
+        };
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
 
     const handleTabChange = useCallback((newTab: string) => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (newTab === 'dashboard') {
+        const validTab: TabType = isValidTab(newTab) ? newTab : 'dashboard';
+        // 1. Immediately update React state for instant UI switch
+        setActiveTab(validTab);
+
+        // 2. Synchronize URL cleanly
+        const params = new URLSearchParams(window.location.search);
+        if (validTab === 'dashboard') {
             params.delete('tab');
         } else {
-            params.set('tab', newTab);
+            params.set('tab', validTab);
         }
         const qs = params.toString();
-        router.replace(qs ? `/dashboard?${qs}` : '/dashboard', { scroll: false });
-    }, [router, searchParams]);
+        const targetUrl = qs ? `/dashboard?${qs}` : '/dashboard';
+
+        // 3. Update browser history and Next.js router
+        window.history.pushState(null, '', targetUrl);
+        router.replace(targetUrl, { scroll: false });
+    }, [router]);
 
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
     const [locationBadge, setLocationBadge] = useState<string>('ไทย');
@@ -158,7 +184,14 @@ function DashboardContent() {
         <div className="app-container">
             {/* Sidebar Navigation (Desktop) */}
             <aside className="sidebar">
-                <div className="brand">
+                <div
+                    className="brand"
+                    onClick={() => handleTabChange('dashboard')}
+                    style={{ cursor: 'pointer' }}
+                    role="button"
+                    tabIndex={0}
+                    title="กลับสู่หน้าแดชบอร์ด"
+                >
                     <Image src="/logo-daybase.png" alt="Day Base" width={34} height={34} className="brand-logo-img" priority />
                     <div>
                         <span className="brand-name">Day Base</span>
