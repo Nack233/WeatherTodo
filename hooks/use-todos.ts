@@ -7,6 +7,7 @@ import {
     createTodo,
     toggleTodo,
     deleteTodo,
+    sendTestReminder,
 } from '@/app/actions/todo-actions';
 
 import type { ToastType } from '@/app/components/Toast';
@@ -45,6 +46,7 @@ export function useTodos({ onShowToast }: UseTodosOptions = {}) {
         description?: string | null;
         priority: Priority;
         due_date?: string | null;
+        reminder_at?: string | null;
     }) => {
         if (!params.title.trim()) return false;
 
@@ -53,6 +55,7 @@ export function useTodos({ onShowToast }: UseTodosOptions = {}) {
             description: params.description?.trim() || null,
             priority: params.priority,
             due_date: params.due_date || null,
+            reminder_at: params.reminder_at || null,
         });
 
         if (result.error) {
@@ -121,6 +124,23 @@ export function useTodos({ onShowToast }: UseTodosOptions = {}) {
         }
     };
 
+    // Trigger test reminder to LINE
+    const triggerTestReminder = async (id: string) => {
+        onShowToast?.('กำลังส่งข้อความแจ้งเตือนไปที่ LINE...', 'info');
+        const res = await sendTestReminder(id);
+        if (res.error) {
+            onShowToast?.(res.error, 'error');
+            return false;
+        }
+        if (res.data?.success) {
+            onShowToast?.(res.data.message, 'success');
+            // update local state
+            setTodos(prev => prev.map(t => t.id === id ? { ...t, is_reminded: true } : t));
+            return true;
+        }
+        return false;
+    };
+
     return {
         todos,
         isLoading,
@@ -131,5 +151,6 @@ export function useTodos({ onShowToast }: UseTodosOptions = {}) {
         addTodo,
         toggleTodoItem,
         deleteTodoItem,
+        triggerTestReminder,
     };
 }

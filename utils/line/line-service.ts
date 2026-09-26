@@ -283,13 +283,22 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     const expensesToAdd = intents.filter(i => i.action === 'add_expense');
 
     if (todosToAdd.length > 1) {
-        const rows = todosToAdd.map(t => ({
-            user_id: userId,
-            title: t.todo?.title || text,
-            priority: t.todo?.priority || 'medium',
-            due_date: t.todo?.due_date || null,
-            completed: false,
-        }));
+        const rows = todosToAdd.map(t => {
+            let reminderAt: string | null = null;
+            if (t.todo?.reminder_time) {
+                const targetDate = t.todo.due_date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+                reminderAt = `${targetDate}T${t.todo.reminder_time}:00+07:00`;
+            }
+            return {
+                user_id: userId,
+                title: t.todo?.title || text,
+                priority: t.todo?.priority || 'medium',
+                due_date: t.todo?.due_date || null,
+                reminder_at: reminderAt,
+                is_reminded: false,
+                completed: false,
+            };
+        });
 
         const { data: newTodos, error } = await supabase.from('todos').insert(rows).select();
 
@@ -357,6 +366,12 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
     switch (firstIntent.action) {
         case 'add_todo': {
             const todoInput = firstIntent.todo || { title: text };
+            let reminderAt: string | null = null;
+            if (todoInput.reminder_time) {
+                const targetDate = todoInput.due_date || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Bangkok' });
+                reminderAt = `${targetDate}T${todoInput.reminder_time}:00+07:00`;
+            }
+
             const { data: newTodo, error } = await supabase
                 .from('todos')
                 .insert({
@@ -364,6 +379,8 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                     title: todoInput.title,
                     priority: todoInput.priority || 'medium',
                     due_date: todoInput.due_date || null,
+                    reminder_at: reminderAt,
+                    is_reminded: false,
                     completed: false,
                 })
                 .select()
@@ -385,6 +402,7 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                             title: newTodo.title,
                             priority: newTodo.priority,
                             dueDate: newTodo.due_date,
+                            reminderTime: todoInput.reminder_time ? `${todoInput.reminder_time} น.` : null,
                         }),
                         quickReply: DEFAULT_QUICK_REPLY,
                     },
@@ -552,5 +570,65 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
             ]);
             break;
         }
+    }
+}
+
+/**
+ * Handle LINE Postback Events (e.g. user taps "✅ ทำเสร็จแล้ว" button on reminder card)
+ */
+export async function handleLinePostbackEvent(event: LineWebhookEvent): Promise<void> {
+    const postbackData = event.postback?.data;
+    const replyToken = event.replyToken;
+    const lineUserId = event.source.userId;
+
+    if (!replyToken || !lineUserId || !postbackData) return;
+
+    try {
+        const params = new URLSearchParams(postbackData);
+        const action = params.get('action');
+        const todoId = params.get('todo_id');
+
+        if (action === 'complete_todo' && todoId) {
+            const supabase = createAdminClient();
+            const userId = await resolveUserId(lineUserId);
+
+            if (!userId) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: 'ไม่พบบัญชีที่เชื่อมโยงกับ LINE นี้ค่า กรุณาผูกบัญชีใน Dashboard ก่อนนะคะ 💖',
+                    },
+                ]);
+                return;
+            }
+
+            const { data: updatedTodo, error } = await supabase
+                .from('todos')
+                .update({ completed: true })
+                .eq('id', todoId)
+                .eq('user_id', userId)
+                .select('title')
+                .maybeSingle();
+
+            if (error || !updatedTodo) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: 'งืออ อัปเดตสถานะงานไม่สำเร็จ หรืออาจถูกลบไปแล้วค่า 🥺',
+                    },
+                ]);
+                return;
+            }
+
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'text',
+                    text: `🎉 เก่งมากเลยค่าา! น้องเบสบันทึกว่าทำ "${updatedTodo.title}" เสร็จเรียบร้อยแล้วนะคะ 💖✨`,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+        }
+    } catch (err) {
+        console.error('[LINE Service] handleLinePostbackEvent error:', err);
     }
 }

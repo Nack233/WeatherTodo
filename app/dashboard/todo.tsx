@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Trash2, Calendar, AlertCircle, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Calendar, AlertCircle, Loader2, ChevronDown, ChevronUp, Bell, Send } from 'lucide-react';
 import { useToast } from '@/app/components/Toast';
 import type { Todo, Priority } from '@/types/database';
 import { useTodos } from '@/hooks/use-todos';
+import { getLineAccountStatus } from '@/app/actions/line-actions';
 
 // ==========================================
 // HELPERS
@@ -26,6 +27,15 @@ const CATEGORIES = ['ทั่วไป', 'งาน', 'การเงิน', 
 function getThaiDateLabel(dateStr: string): string {
     const date = new Date(dateStr + 'T00:00:00');
     return date.toLocaleDateString('th-TH', { month: 'short', day: 'numeric' });
+}
+
+function getReminderTimeLabel(isoStr: string): string {
+    try {
+        const d = new Date(isoStr);
+        return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }) + ' น.';
+    } catch {
+        return 'ตั้งเตือน';
+    }
 }
 
 function isOverdue(todo: Todo): boolean {
@@ -73,6 +83,7 @@ export default function Todo() {
         addTodo,
         toggleTodoItem,
         deleteTodoItem,
+        triggerTestReminder,
     } = useTodos({ onShowToast: showToast });
 
     // Form states
@@ -80,6 +91,10 @@ export default function Todo() {
     const [description, setDescription] = useState('');
     const [priority, setPriority] = useState<Priority>('medium');
     const [dueDate, setDueDate] = useState('');
+    const [enableReminder, setEnableReminder] = useState(false);
+    const [reminderTime, setReminderTime] = useState('09:00');
+    const [isLineLinked, setIsLineLinked] = useState<boolean | null>(null);
+    const [testingId, setTestingId] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -88,6 +103,11 @@ export default function Todo() {
 
     useEffect(() => {
         setDueDate(new Date().toISOString().split('T')[0]);
+        getLineAccountStatus().then(res => {
+            if (res.data) {
+                setIsLineLinked(res.data.isLinked);
+            }
+        });
     }, []);
 
     // --- Create ---
@@ -96,11 +116,17 @@ export default function Todo() {
         if (!title.trim()) return;
         setIsSubmitting(true);
 
+        let reminderAt: string | null = null;
+        if (enableReminder && dueDate && reminderTime) {
+            reminderAt = `${dueDate}T${reminderTime}:00+07:00`;
+        }
+
         const success = await addTodo({
             title,
             description,
             priority,
             due_date: dueDate,
+            reminder_at: reminderAt,
         });
 
         if (success) {
@@ -108,10 +134,18 @@ export default function Todo() {
             setDescription('');
             setPriority('medium');
             setDueDate(new Date().toISOString().split('T')[0]);
+            setEnableReminder(false);
+            setReminderTime('09:00');
             setShowAdvanced(false);
         }
 
         setIsSubmitting(false);
+    };
+
+    const handleTestReminder = async (id: string) => {
+        setTestingId(id);
+        await triggerTestReminder(id);
+        setTestingId(null);
     };
 
     // --- Toggle ---
@@ -219,6 +253,46 @@ export default function Todo() {
                                     />
                                 </div>
                             </div>
+
+                            <div style={{ marginTop: '0.85rem', padding: '0.85rem', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                    <label htmlFor="todo-reminder-toggle" style={{ fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', margin: 0 }}>
+                                        <Bell size={15} style={{ color: enableReminder ? '#38BDF8' : 'var(--text-secondary)' }} />
+                                        <span>🔔 แจ้งเตือนผ่าน LINE อัตโนมัติ</span>
+                                    </label>
+                                    <input
+                                        type="checkbox"
+                                        id="todo-reminder-toggle"
+                                        checked={enableReminder}
+                                        onChange={e => setEnableReminder(e.target.checked)}
+                                        disabled={isSubmitting}
+                                        style={{ width: '18px', height: '18px', cursor: 'pointer', accentColor: '#38BDF8' }}
+                                    />
+                                </div>
+
+                                {enableReminder && (
+                                    <div style={{ marginTop: '0.75rem', paddingTop: '0.75rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                                        <div className="form-group" style={{ margin: 0 }}>
+                                            <label htmlFor="todo-reminder-time" style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                                เวลาที่ต้องการให้ส่งเตือน (LINE)
+                                            </label>
+                                            <input
+                                                type="time"
+                                                id="todo-reminder-time"
+                                                value={reminderTime}
+                                                onChange={e => setReminderTime(e.target.value)}
+                                                disabled={isSubmitting}
+                                                style={{ borderRadius: '10px', marginTop: '4px' }}
+                                            />
+                                        </div>
+                                        {isLineLinked === false && (
+                                            <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                <span>💡 หมายเหตุ: บัญชียังไม่ได้ผูก LINE (กดขอรหัสผูกบัญชี 6 หลักได้ที่รูปน้องเบสข้างบน เพื่อเปิดรับแจ้งเตือนนะคะ)</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )}
 
@@ -317,7 +391,7 @@ export default function Todo() {
                                                 {task.description && (
                                                     <span className="todo-desc" style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{task.description}</span>
                                                 )}
-                                                <div className="todo-meta" style={{ marginTop: '0.35rem' }}>
+                                                <div className="todo-meta" style={{ marginTop: '0.35rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem', alignItems: 'center' }}>
                                                     <span className={`priority-badge ${PRIORITY_CLASS[task.priority]}`} style={{ borderRadius: '6px' }}>
                                                         {PRIORITY_LABELS[task.priority]}
                                                     </span>
@@ -327,21 +401,65 @@ export default function Todo() {
                                                             {getThaiDateLabel(task.due_date)}
                                                         </span>
                                                     )}
+                                                    {task.reminder_at && (
+                                                        <span
+                                                            className="todo-reminder-badge"
+                                                            style={{
+                                                                fontSize: '0.72rem',
+                                                                padding: '0.15rem 0.5rem',
+                                                                borderRadius: '6px',
+                                                                background: task.is_reminded ? 'rgba(16, 185, 129, 0.15)' : 'rgba(56, 189, 248, 0.15)',
+                                                                color: task.is_reminded ? '#10B981' : '#38BDF8',
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '3px',
+                                                                fontWeight: 600,
+                                                            }}
+                                                            title={task.is_reminded ? `ส่งเตือนแล้วเมื่อ ${task.reminded_at || ''}` : `กำหนดเตือน: ${task.reminder_at}`}
+                                                        >
+                                                            <Bell size={11} />
+                                                            {task.is_reminded ? 'เตือนใน LINE แล้ว' : getReminderTimeLabel(task.reminder_at)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
-                                        <button
-                                            className="icon-btn delete-btn"
-                                            onClick={() => handleDelete(task.id)}
-                                            disabled={isDeleting || isToggling}
-                                            title="ลบรายการ"
-                                            style={{ borderRadius: '10px' }}
-                                        >
-                                            {isDeleting
-                                                ? <Loader2 size={16} className="spin" />
-                                                : <Trash2 size={16} className="text-red" />
-                                            }
-                                        </button>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            {task.reminder_at && (
+                                                <button
+                                                    type="button"
+                                                    className="icon-btn"
+                                                    onClick={() => handleTestReminder(task.id)}
+                                                    disabled={testingId === task.id || isDeleting || isToggling}
+                                                    title="กดเพื่อทดสอบส่งข้อความแจ้งเตือนงานนี้เข้า LINE ตอนนี้เลย"
+                                                    style={{
+                                                        borderRadius: '10px',
+                                                        color: '#38BDF8',
+                                                        background: 'rgba(56, 189, 248, 0.1)',
+                                                        border: '1px solid rgba(56, 189, 248, 0.2)',
+                                                        padding: '0.45rem',
+                                                    }}
+                                                >
+                                                    {testingId === task.id ? (
+                                                        <Loader2 size={16} className="spin" />
+                                                    ) : (
+                                                        <Send size={15} />
+                                                    )}
+                                                </button>
+                                            )}
+                                            <button
+                                                className="icon-btn delete-btn"
+                                                onClick={() => handleDelete(task.id)}
+                                                disabled={isDeleting || isToggling}
+                                                title="ลบรายการ"
+                                                style={{ borderRadius: '10px' }}
+                                            >
+                                                {isDeleting
+                                                    ? <Loader2 size={16} className="spin" />
+                                                    : <Trash2 size={16} className="text-red" />
+                                                }
+                                            </button>
+                                        </div>
                                     </li>
                                 );
                             })

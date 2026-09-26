@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateLineSignature } from '@/utils/line/line-client';
-import { handleLineMessageEvent } from '@/utils/line/line-service';
+import { handleLineMessageEvent, handleLinePostbackEvent } from '@/utils/line/line-service';
 import type { LineWebhookPayload } from '@/types/line';
 
 export async function GET() {
@@ -48,6 +48,9 @@ export async function POST(req: NextRequest) {
                 if (event.type === 'message' && event.message?.type === 'text') {
                     console.log('[LINE Webhook] Received message:', event.message.text);
                     await handleLineMessageEvent(event);
+                } else if (event.type === 'postback') {
+                    console.log('[LINE Webhook] Received postback:', event.postback?.data);
+                    await handleLinePostbackEvent(event);
                 }
             } catch (eventErr) {
                 console.error('[LINE Webhook] Error processing single event:', eventErr);

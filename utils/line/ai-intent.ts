@@ -87,6 +87,30 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
         calculatedDueDate = calcDate(2);
     }
 
+    // Extract time if specified (e.g. 09:00, 14.30, 9 โมง, บ่าย 2 โมง, 1 ทุ่ม)
+    let extractedReminderTime: string | null = null;
+    const timeMatch = trimmed.match(/(\d{1,2})[:.](\d{2})\s*(น\.|น)?/);
+    if (timeMatch) {
+        const hh = timeMatch[1].padStart(2, '0');
+        const mm = timeMatch[2];
+        extractedReminderTime = `${hh}:${mm}`;
+    } else {
+        const thaiHourMatch = trimmed.match(/(บ่าย\s*(\d{1,2})|(\d{1,2})\s*โมง|(\d{1,2})\s*ทุ่ม)/);
+        if (thaiHourMatch) {
+            if (trimmed.includes('ทุ่ม') && thaiHourMatch[4]) {
+                const hourNum = parseInt(thaiHourMatch[4], 10);
+                extractedReminderTime = `${18 + hourNum}:00`.padStart(5, '0');
+            } else if (trimmed.includes('บ่าย') && thaiHourMatch[2]) {
+                const hourNum = parseInt(thaiHourMatch[2], 10);
+                extractedReminderTime = `${12 + (hourNum === 12 ? 0 : hourNum)}:00`.padStart(5, '0');
+            } else if (thaiHourMatch[3]) {
+                const hourNum = parseInt(thaiHourMatch[3], 10);
+                const h = hourNum < 6 ? hourNum + 12 : hourNum;
+                extractedReminderTime = `${String(h).padStart(2, '0')}:00`;
+            }
+        }
+    }
+
     // Add Todo (Explicit keywords or common action verbs like ซื้อ/ไป/ทำ/นัด/ส่ง)
     const isTodoAction = /(เพิ่ม|เตือน|บันทึก|ต้องทำ|อย่าลืม|ซื้อ|ไป|นัด|ส่ง|ทำ|โทร|ซ่อม|อ่าน|จอง)/.test(trimmed);
     if (isTodoAction || /พรุ่งนี้|มะรืน/.test(trimmed)) {
@@ -100,6 +124,7 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
                 title,
                 priority: isHigh ? 'high' : 'medium',
                 due_date: calculatedDueDate,
+                reminder_time: extractedReminderTime,
                 category: /ซื้อ/.test(trimmed) ? 'ส่วนตัว' : 'ทั่วไป',
             },
         };
@@ -169,7 +194,12 @@ export async function analyzeLineIntent(userMessage: string): Promise<AiIntentRe
 
 Action Types ที่เป็นไปได้:
 1. "add_todo": ผู้ใช้ต้องการเพิ่มสิ่งที่ต้องทำ/บันทึกงาน/เตือนความจำ
-   - สกัด: title (ข้อความงาน), priority ("low"|"medium"|"high"), due_date (รูปแบบ "YYYY-MM-DD" คำนวณจาก "พรุ่งนี้", "มะรืนนี้", "วันศุกร์" โดยอิงจากวันที่ปัจจุบัน ${todayStr}), category ("ทั่วไป"|"งาน"|"การเงิน"|"สุขภาพ"|"ส่วนตัว")
+   - สกัด: 
+     - title (ข้อความงาน)
+     - priority ("low"|"medium"|"high")
+     - due_date (รูปแบบ "YYYY-MM-DD" คำนวณจาก "วันนี้", "พรุ่งนี้", "มะรืนนี้", "วันศุกร์" โดยอิงจากวันที่ปัจจุบัน ${todayStr})
+     - reminder_time (รูปแบบเวลา 24 ชม. "HH:mm" เช่น "09:00", "14:30" หากผู้ใช้ระบุเวลาที่ต้องการให้เตือน เช่น 9 โมงเช้า, บ่ายสอง, 18.00 น. หากไม่ระบุให้เป็น null)
+     - category ("ทั่วไป"|"งาน"|"การเงิน"|"สุขภาพ"|"ส่วนตัว")
 2. "list_todos": ผู้ใช้ต้องการดูรายการงาน/สิ่งที่ต้องทำค้างอยู่
 3. "complete_todo": ผู้ใช้บอกว่าทำงานอะไรเสร็จแล้ว
    - สกัด: keyword (คำหรือชื่องานที่ทำเสร็จ)
@@ -188,7 +218,7 @@ Action Types ที่เป็นไปได้:
 {
   "action": "add_todo" | "list_todos" | "complete_todo" | "add_expense" | "list_expenses" | "get_weather" | "link_account" | "help" | "general_chat",
   "confidence": 0.0 - 1.0,
-  "todo": { "title": string, "priority": "low"|"medium"|"high", "due_date": "YYYY-MM-DD" | null, "category": string },
+  "todo": { "title": string, "priority": "low"|"medium"|"high", "due_date": "YYYY-MM-DD" | null, "reminder_time": "HH:mm" | null, "category": string },
   "complete_todo": { "keyword": string },
   "expense": { "amount": number, "type": "expense"|"income", "category": string, "note": string },
   "link_account": { "code": string, "email": string },

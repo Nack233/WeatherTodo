@@ -184,6 +184,8 @@ export interface AiIntentResult {
         title: string;
         priority?: 'low' | 'medium' | 'high';
         due_date?: string | null; // YYYY-MM-DD
+        reminder_time?: string | null; // HH:mm e.g. "09:00"
+        reminder_at?: string | null; // ISO datetime e.g. "2026-09-27T09:00:00+07:00"
         category?: string;
     };
     complete_todo?: {

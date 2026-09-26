@@ -1,7 +1,8 @@
 import crypto from 'crypto';
-import type { LineMessage, LineFlexBubble, LineQuickReply } from '@/types/line';
+import type { LineMessage, LineFlexBubble, LineQuickReply, LineFlexComponent } from '@/types/line';
 
 const LINE_REPLY_URL = 'https://api.line.me/v2/bot/message/reply';
+const LINE_PUSH_URL = 'https://api.line.me/v2/bot/message/push';
 
 /**
  * Validate LINE Webhook request signature
@@ -70,6 +71,47 @@ export async function replyLineMessage(
     }
 }
 
+/**
+ * Send proactive push message to a specific LINE user via LINE Messaging API
+ */
+export async function pushLineMessage(
+    to: string,
+    messages: LineMessage[]
+): Promise<boolean> {
+    const accessToken = (process.env.LINE_CHANNEL_ACCESS_TOKEN || process.env.LINE_CHANNEL__ACCESS_TOKEN)?.trim();
+    if (!accessToken) {
+        console.error('[LINE Client] LINE_CHANNEL_ACCESS_TOKEN is not configured in environment');
+        return false;
+    }
+
+    try {
+        console.log('[LINE Client] Pushing notification to LINE user:', to.slice(0, 8) + '...');
+        const response = await fetch(LINE_PUSH_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+                to,
+                messages: messages.slice(0, 5),
+            }),
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[LINE Client] Push message failed with status:', response.status, errorText);
+            return false;
+        }
+
+        console.log('[LINE Client] Push message sent successfully to user:', to.slice(0, 8) + '...');
+        return true;
+    } catch (err) {
+        console.error('[LINE Client] Network error pushing message:', err);
+        return false;
+    }
+}
+
 // ==========================================
 // QUICK REPLIES
 // ==========================================
@@ -121,11 +163,80 @@ export function createTodoAddedFlex(todo: {
     title: string;
     priority?: string;
     dueDate?: string | null;
+    reminderTime?: string | null;
 }): LineFlexBubble {
     const priorityColor =
         todo.priority === 'high' ? '#EF4444' : todo.priority === 'medium' ? '#F59E0B' : '#10B981';
     const priorityText =
         todo.priority === 'high' ? 'ด่วนมาก 🔥' : todo.priority === 'medium' ? 'ปานกลาง ⚡' : 'ทั่วไป 🌸';
+
+    const infoRows: LineFlexComponent[] = [
+        {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+                {
+                    type: 'text',
+                    text: 'ความสำคัญ:',
+                    size: 'sm',
+                    color: '#94A3B8',
+                    flex: 2,
+                },
+                {
+                    type: 'text',
+                    text: priorityText,
+                    size: 'sm',
+                    color: priorityColor,
+                    weight: 'bold',
+                    flex: 3,
+                },
+            ],
+        },
+        {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+                {
+                    type: 'text',
+                    text: 'กำหนดส่ง:',
+                    size: 'sm',
+                    color: '#94A3B8',
+                    flex: 2,
+                },
+                {
+                    type: 'text',
+                    text: todo.dueDate || 'ไม่มีกำหนด',
+                    size: 'sm',
+                    color: '#F8FAFC',
+                    flex: 3,
+                },
+            ],
+        },
+    ];
+
+    if (todo.reminderTime) {
+        infoRows.push({
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+                {
+                    type: 'text',
+                    text: '🔔 เตือนใน LINE:',
+                    size: 'sm',
+                    color: '#94A3B8',
+                    flex: 2,
+                },
+                {
+                    type: 'text',
+                    text: todo.reminderTime,
+                    size: 'sm',
+                    color: '#38BDF8',
+                    weight: 'bold',
+                    flex: 3,
+                },
+            ],
+        });
+    }
 
     return {
         type: 'bubble',
@@ -164,46 +275,141 @@ export function createTodoAddedFlex(todo: {
                     type: 'separator',
                     color: '#334155',
                 },
+                ...infoRows,
+            ],
+        },
+    };
+}
+
+/**
+ * Flex message sent proactively as a reminder when a Todo item is due
+ */
+export function createTodoReminderFlex(todo: {
+    id: string;
+    title: string;
+    priority?: string;
+    dueDate?: string | null;
+    reminderTime?: string | null;
+    description?: string | null;
+}): LineFlexBubble {
+    const priorityColor =
+        todo.priority === 'high' ? '#EF4444' : todo.priority === 'medium' ? '#F59E0B' : '#10B981';
+    const priorityText =
+        todo.priority === 'high' ? 'ด่วนมาก 🔥' : todo.priority === 'medium' ? 'ปานกลาง ⚡' : 'ทั่วไป 🌸';
+
+    const bodyContents: LineFlexComponent[] = [
+        {
+            type: 'text',
+            text: todo.title,
+            weight: 'bold',
+            size: 'lg',
+            color: '#FFFFFF',
+            wrap: true,
+        },
+    ];
+
+    if (todo.description) {
+        bodyContents.push({
+            type: 'text',
+            text: todo.description,
+            size: 'sm',
+            color: '#94A3B8',
+            wrap: true,
+        });
+    }
+
+    bodyContents.push(
+        {
+            type: 'separator',
+            color: '#334155',
+        },
+        {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
                 {
-                    type: 'box',
-                    layout: 'horizontal',
-                    contents: [
-                        {
-                            type: 'text',
-                            text: 'ความสำคัญ:',
-                            size: 'sm',
-                            color: '#94A3B8',
-                            flex: 2,
-                        },
-                        {
-                            type: 'text',
-                            text: priorityText,
-                            size: 'sm',
-                            color: priorityColor,
-                            weight: 'bold',
-                            flex: 3,
-                        },
-                    ],
+                    type: 'text',
+                    text: 'ความสำคัญ:',
+                    size: 'sm',
+                    color: '#94A3B8',
+                    flex: 2,
                 },
                 {
-                    type: 'box',
-                    layout: 'horizontal',
-                    contents: [
-                        {
-                            type: 'text',
-                            text: 'กำหนดส่ง:',
-                            size: 'sm',
-                            color: '#94A3B8',
-                            flex: 2,
-                        },
-                        {
-                            type: 'text',
-                            text: todo.dueDate || 'ไม่มีกำหนด',
-                            size: 'sm',
-                            color: '#F8FAFC',
-                            flex: 3,
-                        },
-                    ],
+                    type: 'text',
+                    text: priorityText,
+                    size: 'sm',
+                    color: priorityColor,
+                    weight: 'bold',
+                    flex: 3,
+                },
+            ],
+        },
+        {
+            type: 'box',
+            layout: 'horizontal',
+            contents: [
+                {
+                    type: 'text',
+                    text: 'เวลาแจ้งเตือน:',
+                    size: 'sm',
+                    color: '#94A3B8',
+                    flex: 2,
+                },
+                {
+                    type: 'text',
+                    text: todo.reminderTime || todo.dueDate || 'ถึงเวลาแล้ว!',
+                    size: 'sm',
+                    color: '#38BDF8',
+                    weight: 'bold',
+                    flex: 3,
+                },
+            ],
+        }
+    );
+
+    return {
+        type: 'bubble',
+        size: 'mega',
+        header: {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#0F172A',
+            paddingAll: '16px',
+            contents: [
+                {
+                    type: 'text',
+                    text: '⏰ กริ๊งๆ ถึงเวลาทำแล้วน้าา! 🔔',
+                    weight: 'bold',
+                    size: 'md',
+                    color: '#F59E0B',
+                },
+            ],
+        },
+        body: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'md',
+            backgroundColor: '#1E293B',
+            paddingAll: '16px',
+            contents: bodyContents,
+        },
+        footer: {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#0F172A',
+            paddingAll: '12px',
+            contents: [
+                {
+                    type: 'button',
+                    action: {
+                        type: 'postback',
+                        label: '✅ ทำเสร็จแล้ว',
+                        data: `action=complete_todo&todo_id=${todo.id}`,
+                        displayText: `ทำเสร็จแล้ว: ${todo.title}`,
+                    },
+                    style: 'primary',
+                    color: '#10B981',
+                    height: 'sm',
                 },
             ],
         },

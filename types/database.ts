@@ -15,6 +15,9 @@ export interface Todo {
     completed: boolean;
     priority: Priority;
     due_date: string | null;       // ISO date string "YYYY-MM-DD"
+    reminder_at?: string | null;   // ISO datetime string for LINE reminder
+    is_reminded?: boolean;         // Whether LINE reminder was triggered
+    reminded_at?: string | null;   // When LINE reminder was successfully dispatched
     created_at: string;            // ISO datetime string
     updated_at: string;            // ISO datetime string
 }
@@ -25,6 +28,8 @@ export interface TodoInsert {
     completed?: boolean;
     priority?: Priority;
     due_date?: string | null;
+    reminder_at?: string | null;
+    is_reminded?: boolean;
 }
 
 export interface TodoUpdate {
@@ -33,6 +38,9 @@ export interface TodoUpdate {
     completed?: boolean;
     priority?: Priority;
     due_date?: string | null;
+    reminder_at?: string | null;
+    is_reminded?: boolean;
+    reminded_at?: string | null;
 }
 
 // -------------------------------------------
