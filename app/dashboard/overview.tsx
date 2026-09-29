@@ -22,8 +22,23 @@ interface OverviewProps {
     setActiveTab: (tab: string) => void;
 }
 
+const OVERVIEW_CACHE_KEY = 'dashboard_overview_cache';
+
+interface OverviewCacheData {
+    timestamp: number;
+    todoCount: string;
+    todoPercent: number;
+    todoTotal: number;
+    todoCompleted: number;
+    todoList: string[];
+    todayEvents: CalendarEventSummary[];
+    balanceText: string;
+    incomeText: string;
+    expenseText: string;
+}
+
 function formatEventDateDisplay(startDateStr: string): string {
-    if (!startDateStr) return '';
+    if (!startDateStr || typeof startDateStr !== 'string') return '';
     const [datePart, timePart] = startDateStr.split('T');
     const timeDisplay = timePart ? `${timePart.slice(0, 5)} น.` : '(ตลอดวัน)';
 
@@ -115,7 +130,39 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             }
         };
 
-        // 2. Weather Fetch (Parallel & Non-blocking)
+        // 2. Instant Cache Hydration for Overview Cards (0ms UI render)
+        const loadCachedOverview = () => {
+            try {
+                const cached = localStorage.getItem(OVERVIEW_CACHE_KEY);
+                if (cached) {
+                    const parsed = JSON.parse(cached) as Partial<OverviewCacheData>;
+                    if (parsed) {
+                        if (parsed.todoCount !== undefined) {
+                            setTodoCount(parsed.todoCount);
+                            setTodoPercent(parsed.todoPercent ?? 0);
+                            setTodoTotal(parsed.todoTotal ?? 0);
+                            setTodoCompleted(parsed.todoCompleted ?? 0);
+                            setTodoList(parsed.todoList ?? []);
+                            setIsTodoLoading(false);
+                        }
+                        if (parsed.todayEvents !== undefined && Array.isArray(parsed.todayEvents)) {
+                            setTodayEvents(parsed.todayEvents);
+                            setIsEventsLoading(false);
+                        }
+                        if (parsed.balanceText !== undefined) {
+                            setBalanceText(parsed.balanceText);
+                            setIncomeText(parsed.incomeText ?? '฿0.00');
+                            setExpenseText(parsed.expenseText ?? '฿0.00');
+                            setIsExpensesLoading(false);
+                        }
+                    }
+                }
+            } catch {
+                // Ignore cache parse error
+            }
+        };
+
+        // 3. Weather Fetch (Parallel & Non-blocking)
         const fetchWeatherAsync = async () => {
             try {
                 // Check if existing cache is fresh (less than 10 mins old)
@@ -159,81 +206,162 @@ export default function Overview({ user, setActiveTab }: OverviewProps) {
             }
         };
 
-        // 3. Supabase Data Fetch (Parallel with Weather)
+        // 4. Supabase Data Fetch (Decoupled, Resilient, & Cache-Persisted)
         const loadSupabaseData = async () => {
-            const [todosResult, eventsResult, expensesResult] = await Promise.all([
-                getTodos(),
-                getCalendarEvents(),
-                getExpenses(),
-            ]);
+            try {
+                const [todosSettled, eventsSettled, expensesSettled] = await Promise.allSettled([
+                    getTodos(),
+                    getCalendarEvents(),
+                    getExpenses(),
+                ]);
 
-            if (!todosResult.error && todosResult.data) {
-                const active = todosResult.data.filter((t) => !t.completed);
-                const total = todosResult.data.length;
-                const completed = total - active.length;
-                const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+                let updatedTodoCount = todoCount;
+                let updatedTodoPercent = todoPercent;
+                let updatedTodoTotal = todoTotal;
+                let updatedTodoCompleted = todoCompleted;
+                let updatedTodoList = todoList;
+                let updatedTodayEvents = todayEvents;
+                let updatedBalance = balanceText;
+                let updatedIncome = incomeText;
+                let updatedExpense = expenseText;
 
-                setTodoCount(`${completed}/${total} รายการ`);
-                setTodoPercent(percent);
-                setTodoTotal(total);
-                setTodoCompleted(completed);
-                setTodoList(active.slice(0, 3).map((t) => t.title));
-            }
-            setIsTodoLoading(false);
+                // --- 4.1 Process Todos ---
+                try {
+                    if (todosSettled.status === 'fulfilled') {
+                        const todosResult = todosSettled.value;
+                        if (!todosResult.error && Array.isArray(todosResult.data)) {
+                            const active = todosResult.data.filter((t) => !t.completed);
+                            const total = todosResult.data.length;
+                            const completed = total - active.length;
+                            const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
 
-            if (!eventsResult.error && eventsResult.data) {
-                const now = new Date();
-                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                            updatedTodoCount = `${completed}/${total} รายการ`;
+                            updatedTodoPercent = percent;
+                            updatedTodoTotal = total;
+                            updatedTodoCompleted = completed;
+                            updatedTodoList = active.slice(0, 3).map((t) => t.title);
 
-                type TempSummary = CalendarEventSummary & { timestamp: number };
-                const upcoming: TempSummary[] = [];
-                const past: TempSummary[] = [];
-
-                eventsResult.data.forEach((event) => {
-                    const dateObj = new Date(event.start_date.includes('T') ? event.start_date : `${event.start_date}T00:00:00`);
-                    const timeMs = dateObj.getTime();
-                    const summary: TempSummary = {
-                        id: event.id,
-                        title: event.title,
-                        time: formatEventDateDisplay(event.start_date),
-                        tag: event.color,
-                        timestamp: timeMs,
-                    };
-
-                    if (isNaN(timeMs) || timeMs >= todayStart) {
-                        upcoming.push(summary);
-                    } else {
-                        past.push(summary);
+                            setTodoCount(updatedTodoCount);
+                            setTodoPercent(updatedTodoPercent);
+                            setTodoTotal(updatedTodoTotal);
+                            setTodoCompleted(updatedTodoCompleted);
+                            setTodoList(updatedTodoList);
+                        }
                     }
-                });
+                } catch (todoErr) {
+                    console.error('[Overview] Error parsing todos:', todoErr);
+                } finally {
+                    setIsTodoLoading(false);
+                }
 
-                upcoming.sort((a, b) => a.timestamp - b.timestamp);
-                past.sort((a, b) => b.timestamp - a.timestamp);
+                // --- 4.2 Process Calendar Events ---
+                try {
+                    if (eventsSettled.status === 'fulfilled') {
+                        const eventsResult = eventsSettled.value;
+                        if (!eventsResult.error && Array.isArray(eventsResult.data)) {
+                            const now = new Date();
+                            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-                const list = [...upcoming, ...past];
-                setTodayEvents(list.slice(0, 3));
+                            type TempSummary = CalendarEventSummary & { timestamp: number };
+                            const upcoming: TempSummary[] = [];
+                            const past: TempSummary[] = [];
+
+                            eventsResult.data.forEach((event) => {
+                                if (!event) return;
+                                const sDate = event.start_date || '';
+                                const dateObj = new Date(sDate.includes('T') ? sDate : `${sDate}T00:00:00`);
+                                const timeMs = dateObj.getTime();
+                                const summary: TempSummary = {
+                                    id: event.id,
+                                    title: event.title || 'กิจกรรม',
+                                    time: formatEventDateDisplay(sDate),
+                                    tag: event.color || null,
+                                    timestamp: timeMs,
+                                };
+
+                                if (isNaN(timeMs) || timeMs >= todayStart) {
+                                    upcoming.push(summary);
+                                } else {
+                                    past.push(summary);
+                                }
+                            });
+
+                            upcoming.sort((a, b) => a.timestamp - b.timestamp);
+                            past.sort((a, b) => b.timestamp - a.timestamp);
+
+                            const list = [...upcoming, ...past].slice(0, 3);
+                            updatedTodayEvents = list;
+                            setTodayEvents(list);
+                        }
+                    }
+                } catch (eventErr) {
+                    console.error('[Overview] Error parsing calendar events:', eventErr);
+                } finally {
+                    setIsEventsLoading(false);
+                }
+
+                // --- 4.3 Process Expenses ---
+                try {
+                    if (expensesSettled.status === 'fulfilled') {
+                        const expensesResult = expensesSettled.value;
+                        if (!expensesResult.error && Array.isArray(expensesResult.data)) {
+                            let inc = 0;
+                            let exp = 0;
+                            expensesResult.data.forEach((t) => {
+                                if (!t) return;
+                                const amt = Number(t.amount) || 0;
+                                if (t.type === 'income') inc += amt;
+                                else exp += amt;
+                            });
+                            const bal = inc - exp;
+
+                            const formatShort = (val: number) => '฿' + val.toLocaleString('th-TH', { maximumFractionDigits: 0 });
+                            updatedBalance = formatShort(bal);
+                            updatedIncome = formatShort(inc);
+                            updatedExpense = formatShort(exp);
+
+                            setBalanceText(updatedBalance);
+                            setIncomeText(updatedIncome);
+                            setExpenseText(updatedExpense);
+                        }
+                    }
+                } catch (expErr) {
+                    console.error('[Overview] Error parsing expenses:', expErr);
+                } finally {
+                    setIsExpensesLoading(false);
+                }
+
+                // --- 4.4 Persist to Local Cache ---
+                try {
+                    const cacheToSave: OverviewCacheData = {
+                        timestamp: Date.now(),
+                        todoCount: updatedTodoCount,
+                        todoPercent: updatedTodoPercent,
+                        todoTotal: updatedTodoTotal,
+                        todoCompleted: updatedTodoCompleted,
+                        todoList: updatedTodoList,
+                        todayEvents: updatedTodayEvents,
+                        balanceText: updatedBalance,
+                        incomeText: updatedIncome,
+                        expenseText: updatedExpense,
+                    };
+                    localStorage.setItem(OVERVIEW_CACHE_KEY, JSON.stringify(cacheToSave));
+                } catch {
+                    // Ignore storage quota errors
+                }
+            } catch (fatalErr) {
+                console.error('[Overview] loadSupabaseData fatal error:', fatalErr);
+            } finally {
+                // Guaranteed safety: all skeleton flags turn off even if an unhandled error occurs
+                setIsTodoLoading(false);
+                setIsEventsLoading(false);
+                setIsExpensesLoading(false);
             }
-            setIsEventsLoading(false);
-
-            if (!expensesResult.error && expensesResult.data) {
-                let inc = 0;
-                let exp = 0;
-                expensesResult.data.forEach((t) => {
-                    if (t.type === 'income') inc += Number(t.amount);
-                    else exp += Number(t.amount);
-                });
-                const bal = inc - exp;
-
-                const formatShort = (val: number) => '฿' + val.toLocaleString('th-TH', { maximumFractionDigits: 0 });
-                setBalanceText(formatShort(bal));
-                setIncomeText(formatShort(inc));
-                setExpenseText(formatShort(exp));
-            }
-            setIsExpensesLoading(false);
         };
 
-        // Trigger tasks asynchronously and in parallel
+        // Trigger tasks asynchronously and in parallel with instant cache display
         loadCachedWeather();
+        loadCachedOverview();
         void fetchWeatherAsync();
         void loadSupabaseData();
     }, []);

@@ -9,10 +9,41 @@ interface UseAiBriefingOptions {
     onShowToast?: (msg: string, type: 'success' | 'info' | 'error') => void;
 }
 
+const BRIEFING_CACHE_KEY = 'ai_daily_briefing_cache';
+
+function getTodayKey(): string {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function useAiBriefing({ data, onShowToast }: UseAiBriefingOptions) {
-    const [briefingText, setBriefingText] = useState<string>('');
+    const [briefingText, setBriefingText] = useState<string>(() => {
+        if (typeof window === 'undefined') return '';
+        try {
+            const raw = localStorage.getItem(BRIEFING_CACHE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.date === getTodayKey() && parsed?.text) {
+                    return parsed.text;
+                }
+            }
+        } catch {}
+        return '';
+    });
     const [isGenerating, setIsGenerating] = useState<boolean>(false);
-    const [sourceTag, setSourceTag] = useState<'gemini' | 'openrouter' | 'synthesis'>('synthesis');
+    const [sourceTag, setSourceTag] = useState<'gemini' | 'openrouter' | 'synthesis'>(() => {
+        if (typeof window === 'undefined') return 'synthesis';
+        try {
+            const raw = localStorage.getItem(BRIEFING_CACHE_KEY);
+            if (raw) {
+                const parsed = JSON.parse(raw);
+                if (parsed?.date === getTodayKey() && parsed?.source) {
+                    return parsed.source;
+                }
+            }
+        } catch {}
+        return 'synthesis';
+    });
 
     // Audio / Speech State (ElevenLabs AI Voice + Web Speech fallback)
     const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
@@ -33,6 +64,13 @@ export function useAiBriefing({ data, onShowToast }: UseAiBriefingOptions) {
             const res = await fetchAiBriefing(data);
             setBriefingText(res.text);
             setSourceTag(res.source);
+            try {
+                localStorage.setItem(BRIEFING_CACHE_KEY, JSON.stringify({
+                    date: getTodayKey(),
+                    text: res.text,
+                    source: res.source,
+                }));
+            } catch {}
             if (forceFresh && onShowToast) {
                 onShowToast('อัปเดตบทสรุปน้องเบสเรียบร้อยแล้ว', 'success');
             }
@@ -40,6 +78,13 @@ export function useAiBriefing({ data, onShowToast }: UseAiBriefingOptions) {
             const fallbackText = generateDailyBriefing(data);
             setBriefingText(fallbackText);
             setSourceTag('synthesis');
+            try {
+                localStorage.setItem(BRIEFING_CACHE_KEY, JSON.stringify({
+                    date: getTodayKey(),
+                    text: fallbackText,
+                    source: 'synthesis',
+                }));
+            } catch {}
         } finally {
             setIsGenerating(false);
         }

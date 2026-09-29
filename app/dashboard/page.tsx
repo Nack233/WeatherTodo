@@ -83,7 +83,7 @@ function DashboardContent() {
         // 1. Immediately update React state for instant UI switch
         setActiveTab(validTab);
 
-        // 2. Synchronize URL cleanly
+        // 2. Synchronize URL cleanly via Next.js native history support
         const params = new URLSearchParams(window.location.search);
         if (validTab === 'dashboard') {
             params.delete('tab');
@@ -93,10 +93,9 @@ function DashboardContent() {
         const qs = params.toString();
         const targetUrl = qs ? `/dashboard?${qs}` : '/dashboard';
 
-        // 3. Update browser history and Next.js router
+        // 3. Update browser history cleanly without triggering redundant RSC requests
         window.history.pushState(null, '', targetUrl);
-        router.replace(targetUrl, { scroll: false });
-    }, [router]);
+    }, []);
 
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
     const [locationBadge, setLocationBadge] = useState<string>('ไทย');
