@@ -37,6 +37,39 @@ function fallbackIntentParser(message: string, todayStr: string): AiIntentResult
         return { action: 'list_todos', confidence: 0.9 };
     }
 
+    // Save Note / Memory (e.g. จดสเปกคอมให้หน่อย, จำไว้ว่า)
+    if (/(จด|จำไว้|บันทึกโน้ต|บันทึกสเปก|ช่วยจำ)/i.test(trimmed) && !trimmed.includes('บาท')) {
+        const isIt = /(cpu|gpu|ram|ssd|ryzen|9060|spec|สเปก|คอม)/i.test(trimmed);
+        const keyFacts: Record<string, string> = {};
+        const cpuMatch = trimmed.match(/cpu\s*[:=]?\s*([a-zA-Z0-9\s]+?)(?:,|$|\bgpu|\bram)/i);
+        if (cpuMatch) keyFacts['CPU'] = cpuMatch[1].trim();
+        const gpuMatch = trimmed.match(/gpu\s*[:=]?\s*([a-zA-Z0-9\s]+?)(?:,|$|\bcpu|\bram)/i);
+        if (gpuMatch) keyFacts['GPU'] = gpuMatch[1].trim();
+        const ramMatch = trimmed.match(/ram\s*[:=]?\s*([a-zA-Z0-9\s]+?)(?:,|$|\bcpu|\bgpu)/i);
+        if (ramMatch) keyFacts['RAM'] = ramMatch[1].trim();
+
+        return {
+            action: 'save_note',
+            confidence: 0.9,
+            note: {
+                title: isIt ? 'สเปกคอมพิวเตอร์' : 'บันทึกความจำ',
+                content: trimmed,
+                category: isIt ? 'it_gadget' : 'general',
+                tags: isIt ? ['คอมพิวเตอร์', 'สเปก'] : ['บันทึก'],
+                key_facts: keyFacts,
+            },
+        };
+    }
+
+    // Query Note / Memory (e.g. สเปกคอมผมอะไรนะ, คอมผมการ์ดจออะไร)
+    if (/(สเปก|สเปค|spec|การ์ดจอ|cpu|gpu|ram|รหัส|ขนาด|เบอร์|จำได้ไหม|คืออะไร|อะไรนะ)/i.test(trimmed) && /(คอม|ของฉัน|ของผม|ผม|ฉัน|มีอะไร|อะไร)/i.test(trimmed) && !/(จด|บันทึก|จำไว้)/.test(trimmed)) {
+        return {
+            action: 'query_note',
+            confidence: 0.85,
+            query_note: { keyword: trimmed },
+        };
+    }
+
     // Complete Todo
     const doneMatch = trimmed.match(/(ทำ|ส่ง|เสร็จ|เรียบร้อย)\s*(.+)\s*(แล้ว|เสร็จแล้ว)?/);
     if (doneMatch && doneMatch[2] && !trimmed.includes('บาท') && !trimmed.includes('จ่าย')) {
@@ -207,20 +240,32 @@ Action Types ที่เป็นไปได้:
    - สกัด: amount (ตัวเลข), type ("expense"|"income"), category ("อาหาร"|"เดินทาง"|"ช้อปปิ้ง"|"บิลและที่อยู่"|"สุขภาพ"|"ความบันเทิง"|"เงินเดือน"|"อื่นๆ"), note (หมายเหตุสั้นๆ)
 5. "list_expenses": ผู้ใช้ต้องการดูยอดเงิน/สรุปรายรับรายจ่าย
 6. "get_weather": ผู้ใช้ถามเรื่องสภาพอากาศ ฝนตก อุณหภูมิ
-7. "link_account": ผู้ใช้ต้องการผูกบัญชี หรือส่งรหัสผูกบัญชี (pairing code) 6 หลัก หรือพิมพ์อีเมล
+7. "save_note": ผู้ใช้ต้องการให้ช่วยจด/จำข้อมูลหรือสเปกต่างๆ (เช่น "จดสเปกคอมให้หน่อย CPU Ryzen 5, GPU RTX 9060XT", "จำไว้ว่า...", "บันทึกโน้ต...")
+   - สกัด: 
+     - title (ชื่อเรื่อง เช่น "สเปกคอมพิวเตอร์", "รหัสผ่าน Wi-Fi")
+     - content (ข้อความบันทึกฉบับเต็มและเป็นระเบียบ)
+     - category ("it_gadget"|"personal"|"work"|"finance"|"general")
+     - tags (อาเรย์ของคำค้นหา เช่น ["คอมพิวเตอร์", "สเปก", "ryzen"])
+     - key_facts (อ็อบเจกต์ key-value เช่น {"CPU": "Ryzen 5", "GPU": "RTX 9060XT"})
+8. "query_note": ผู้ใช้ถามหาข้อมูล/สเปก/สิ่งที่เคยจดหรือจำไว้ (เช่น "สเปกคอมผมคืออะไร", "คอมผมใช้การ์ดจออะไร", "จำได้ไหมว่าสเปกคอมคืออะไร", "รหัสไวไฟอะไร")
+   - สกัด:
+     - keyword (คำสำคัญของสิ่งที่ถาม เช่น "สเปกคอม", "การ์ดจอ", "รหัสผ่าน")
+9. "link_account": ผู้ใช้ต้องการผูกบัญชี หรือส่งรหัสผูกบัญชี (pairing code) 6 หลัก หรือพิมพ์อีเมล
    - สกัด: code (รหัส 6 หลัก เช่น "123456"), email (หากผู้ใช้ระบุอีเมล)
-8. "help": ผู้ใช้ถามวิธีใช้งาน หรือพิมพ์ help/?
-9. "general_chat": ข้อความทักทาย หรือคำถามทั่วไปที่ไม่เข้าหมวดหมู่ข้างต้น
-   - สกัด: chat_response (คำตอบภาษาไทยสไตล์สาวน้อยน่ารัก สดใส มีพลังบวก)
+10. "help": ผู้ใช้ถามวิธีใช้งาน หรือพิมพ์ help/?
+11. "general_chat": ข้อความทักทาย หรือคำถามทั่วไปที่ไม่เข้าหมวดหมู่ข้างต้น
+    - สกัด: chat_response (คำตอบภาษาไทยสไตล์สาวน้อยน่ารัก สดใส มีพลังบวก)
 
 ส่งออกคำตอบในรูปแบบ JSON ONLY เท่านั้น:
 - หากมี 1 คำสั่ง ให้ส่งออกเป็น JSON Object โครงสร้างนี้:
 {
-  "action": "add_todo" | "list_todos" | "complete_todo" | "add_expense" | "list_expenses" | "get_weather" | "link_account" | "help" | "general_chat",
+  "action": "add_todo" | "list_todos" | "complete_todo" | "add_expense" | "list_expenses" | "get_weather" | "save_note" | "query_note" | "link_account" | "help" | "general_chat",
   "confidence": 0.0 - 1.0,
   "todo": { "title": string, "priority": "low"|"medium"|"high", "due_date": "YYYY-MM-DD" | null, "reminder_time": "HH:mm" | null, "category": string },
   "complete_todo": { "keyword": string },
   "expense": { "amount": number, "type": "expense"|"income", "category": string, "note": string },
+  "note": { "title": string, "content": string, "category": string, "tags": string[], "key_facts": { [key: string]: string } },
+  "query_note": { "keyword": string },
   "link_account": { "code": string, "email": string },
   "chat_response": string
 }

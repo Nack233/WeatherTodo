@@ -34,6 +34,7 @@ const Todo       = dynamic(() => import('./todo'),         { loading: () => <Tab
 const Calendar   = dynamic(() => import('./calendar'),    { loading: () => <TabSkeleton /> });
 const Tracker    = dynamic(() => import('./tracker'),     { loading: () => <TabSkeleton /> });
 const FuelPrices = dynamic(() => import('./fuel-prices'), { loading: () => <TabSkeleton /> });
+const Notes      = dynamic(() => import('./notes'),       { loading: () => <TabSkeleton /> });
 
 // Floating assistant widget lazy loaded on client
 const MascotLineWidget = dynamic(() => import('@/app/components/MascotLineWidget'), { ssr: false });
@@ -42,10 +43,10 @@ const MascotLineWidget = dynamic(() => import('@/app/components/MascotLineWidget
 import { 
     Home, CloudSun, CheckSquare, 
     Calendar as CalendarIcon, Wallet, MapPin, 
-    Moon, Sun, LogOut 
+    Moon, Sun, LogOut, BookOpen
 } from 'lucide-react';
 
-const VALID_TABS = ['dashboard', 'weather', 'todo', 'calendar', 'tracker', 'fuel-prices'] as const;
+const VALID_TABS = ['dashboard', 'weather', 'todo', 'calendar', 'tracker', 'fuel-prices', 'notes'] as const;
 type TabType = typeof VALID_TABS[number];
 
 function isValidTab(tab: string | null): tab is TabType {
@@ -150,6 +151,7 @@ function DashboardContent() {
             case 'calendar': return 'ปฏิทินกิจกรรมและการนัดหมาย';
             case 'tracker': return 'บันทึกรายรับ-รายจ่าย';
             case 'fuel-prices': return 'ราคาน้ำมัน EPPO';
+            case 'notes': return 'สมุดโน้ตและความจำ AI (Second Brain)';
             default: return 'แดชบอร์ด';
         }
     };
@@ -168,6 +170,8 @@ function DashboardContent() {
                 return <Tracker />;
             case 'fuel-prices':
                 return <FuelPrices />;
+            case 'notes':
+                return <Notes />;
             default:
                 return <Overview user={user} setActiveTab={handleTabChange} />;
         }
@@ -239,6 +243,13 @@ function DashboardContent() {
                     >
                         <MapPin />
                         <span>ราคาน้ำมัน</span>
+                    </button>
+                    <button 
+                        className={`nav-item ${activeTab === 'notes' ? 'active' : ''}`}
+                        onClick={() => handleTabChange('notes')}
+                    >
+                        <BookOpen />
+                        <span>สมุดโน้ต AI</span>
                     </button>
                 </nav>
                 <div className="sidebar-footer">
@@ -331,6 +342,13 @@ function DashboardContent() {
                 >
                     <MapPin />
                     <span>น้ำมัน</span>
+                </button>
+                <button 
+                    className={`bottom-nav-item ${activeTab === 'notes' ? 'active' : ''}`}
+                    onClick={() => handleTabChange('notes')}
+                >
+                    <BookOpen />
+                    <span>โน้ต</span>
                 </button>
             </nav>
 

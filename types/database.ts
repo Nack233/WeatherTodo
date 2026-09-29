@@ -131,3 +131,43 @@ export interface ActionResult<T = void> {
     data?: T;
     error?: string;
 }
+
+// -------------------------------------------
+// USER NOTES & AI SECOND BRAIN
+// -------------------------------------------
+export type NoteCategory = 'it_gadget' | 'personal' | 'work' | 'finance' | 'general';
+
+export interface UserNote {
+    id: string;
+    user_id: string;
+    title: string;
+    content: string;
+    category: NoteCategory;
+    tags: string[];
+    key_facts: Record<string, string>;
+    is_pinned: boolean;
+    color: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface UserNoteInsert {
+    title: string;
+    content: string;
+    category?: NoteCategory;
+    tags?: string[];
+    key_facts?: Record<string, string>;
+    is_pinned?: boolean;
+    color?: string;
+}
+
+export interface UserNoteUpdate {
+    title?: string;
+    content?: string;
+    category?: NoteCategory;
+    tags?: string[];
+    key_facts?: Record<string, string>;
+    is_pinned?: boolean;
+    color?: string;
+}
+

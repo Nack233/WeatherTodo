@@ -5,6 +5,8 @@ import {
     createTodoAddedFlex,
     createTodoListFlex,
     createExpenseAddedFlex,
+    createNoteSavedFlex,
+    createNoteAnswerFlex,
     createHelpFlex,
     DEFAULT_QUICK_REPLY,
 } from './line-client';
@@ -550,6 +552,114 @@ export async function handleLineMessageEvent(event: LineWebhookEvent): Promise<v
                 {
                     type: 'text',
                     text: summaryMsg,
+                    quickReply: DEFAULT_QUICK_REPLY,
+                },
+            ]);
+            break;
+        }
+
+        case 'save_note': {
+            const noteInput = firstIntent.note || {
+                title: 'บันทึกความจำ',
+                content: text,
+                category: 'general',
+                tags: ['บันทึก'],
+                key_facts: {},
+            };
+
+            const { data: newNote, error } = await supabase
+                .from('user_notes')
+                .insert({
+                    user_id: userId,
+                    title: noteInput.title || 'บันทึกความจำ',
+                    content: noteInput.content || text,
+                    category: noteInput.category || 'general',
+                    tags: noteInput.tags || [],
+                    key_facts: noteInput.key_facts || {},
+                    is_pinned: false,
+                    color: 'tag-blue',
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                })
+                .select()
+                .single();
+
+            if (error || !newNote) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: `งืออ เกิดข้อผิดพลาดในการบันทึกโน้ตค่า: ${error?.message || 'โปรดลองใหม่อีกครั้งน้า'} 🥺`,
+                    },
+                ]);
+            } else {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'flex',
+                        altText: `บันทึก: ${newNote.title}`,
+                        contents: createNoteSavedFlex({
+                            title: newNote.title,
+                            category: newNote.category,
+                            tags: newNote.tags,
+                            key_facts: newNote.key_facts,
+                        }),
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+            }
+            break;
+        }
+
+        case 'query_note': {
+            const keyword = firstIntent.query_note?.keyword || text;
+            const { data: notes } = await supabase
+                .from('user_notes')
+                .select('*')
+                .eq('user_id', userId)
+                .order('is_pinned', { ascending: false })
+                .order('updated_at', { ascending: false })
+                .limit(10);
+
+            if (!notes || notes.length === 0) {
+                await replyLineMessage(replyToken, [
+                    {
+                        type: 'text',
+                        text: '🔍 ตัวเองยังไม่มีข้อมูลที่บันทึกไว้ในสมุดความจำเลยน้า ลองพิมพ์ "จดสเปกคอมให้หน่อย..." ให้เบสช่วยจำได้เลยนะคะ ✨💖',
+                        quickReply: DEFAULT_QUICK_REPLY,
+                    },
+                ]);
+                break;
+            }
+
+            // Find best matching note
+            const cleanQ = keyword.toLowerCase();
+            const scored = notes.map(note => {
+                let score = 0;
+                const words = cleanQ.split(/\s+/).filter((w: string) => w.length > 1);
+                words.forEach((w: string) => {
+                    if (note.title.toLowerCase().includes(w)) score += 5;
+                    if ((note.tags || []).some((t: string) => t.toLowerCase().includes(w))) score += 4;
+                    if (JSON.stringify(note.key_facts || {}).toLowerCase().includes(w)) score += 3;
+                    if (note.content.toLowerCase().includes(w)) score += 2;
+                });
+                return { note, score };
+            });
+
+            const bestMatch = scored.sort((a, b) => b.score - a.score)[0]?.note || notes[0];
+
+            const factsList = bestMatch.key_facts && Object.keys(bestMatch.key_facts).length > 0
+                ? Object.entries(bestMatch.key_facts).map(([k, v]) => `${k}: ${v}`).join(', ')
+                : bestMatch.content.slice(0, 150);
+
+            const answer = `เบสค้นเจอข้อมูล "${bestMatch.title}" ให้แล้วค่า ✨: ${factsList}`;
+
+            await replyLineMessage(replyToken, [
+                {
+                    type: 'flex',
+                    altText: `ข้อมูล: ${bestMatch.title}`,
+                    contents: createNoteAnswerFlex(answer, {
+                        title: bestMatch.title,
+                        key_facts: bestMatch.key_facts,
+                    }),
                     quickReply: DEFAULT_QUICK_REPLY,
                 },
             ]);

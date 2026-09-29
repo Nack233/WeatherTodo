@@ -173,6 +173,8 @@ export type AiActionType =
     | 'list_expenses'
     | 'get_summary'
     | 'get_weather'
+    | 'save_note'
+    | 'query_note'
     | 'link_account'
     | 'help'
     | 'general_chat';
@@ -196,6 +198,16 @@ export interface AiIntentResult {
         type: 'expense' | 'income';
         category?: string;
         note?: string;
+    };
+    note?: {
+        title: string;
+        content: string;
+        category?: string;
+        tags?: string[];
+        key_facts?: Record<string, string>;
+    };
+    query_note?: {
+        keyword: string;
     };
     link_account?: {
         code?: string;

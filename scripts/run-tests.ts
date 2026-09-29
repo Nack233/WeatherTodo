@@ -35,6 +35,7 @@ const requiredFiles = [
     'app/dashboard/calendar.tsx',
     'app/dashboard/tracker.tsx',
     'app/dashboard/fuel-prices.tsx',
+    'app/dashboard/notes.tsx',
     'app/dashboard/ai-briefing-card.tsx',
     'utils/ai-briefing.ts',
     'utils/openrouter.ts'
@@ -85,7 +86,7 @@ assert(isValidWeatherCache(undefined) === false, 'Rejects undefined weather data
 console.log('\n📌 Test Suite 3: Dashboard Navigation Tab Registration');
 
 const dashboardPageContent = readFileSync(join(process.cwd(), 'app/dashboard/page.tsx'), 'utf-8');
-const registeredTabs = ['dashboard', 'weather', 'todo', 'calendar', 'tracker', 'fuel-prices'];
+const registeredTabs = ['dashboard', 'weather', 'todo', 'calendar', 'tracker', 'fuel-prices', 'notes'];
 
 registeredTabs.forEach((tab) => {
     assert(dashboardPageContent.includes(`activeTab === '${tab}'`), `Tab '${tab}' registered in navigation`);
@@ -100,6 +101,12 @@ try {
     const { extractJsonFromText } = require('../utils/openrouter');
     const directParsed = extractJsonFromText('{"action": "add_todo"}');
     assert(directParsed?.action === 'add_todo', 'Extracts direct JSON object correctly');
+
+    const noteParsed = extractJsonFromText('{"action": "save_note", "note": {"title": "สเปกคอม"}}');
+    assert(noteParsed?.action === 'save_note' && noteParsed?.note?.title === 'สเปกคอม', 'Extracts save_note JSON correctly');
+
+    const queryParsed = extractJsonFromText('{"action": "query_note", "query_note": {"keyword": "สเปกคอม"}}');
+    assert(queryParsed?.action === 'query_note' && queryParsed?.query_note?.keyword === 'สเปกคอม', 'Extracts query_note JSON correctly');
 
     const markdownParsed = extractJsonFromText('```json\n{"action": "get_weather"}\n```');
     assert(markdownParsed?.action === 'get_weather', 'Extracts markdown code-block JSON correctly');

@@ -37,3 +37,6 @@
 
 /* 12. 21st.dev Design System Extensions */
 @import './styles/design-system-21st.css';
+
+/* 13. Smart Notes & AI Second Brain */
+@import './styles/notes.css';

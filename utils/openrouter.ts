@@ -1,6 +1,6 @@
 /**
  * OpenRouter AI API Helper
- * Provides fallback to MiniMax M3 (Free) when Gemini quota is exhausted.
+ * Provides fallback to Space Bunny Alpha when Gemini quota is exhausted.
  */
 
 export interface OpenRouterChatMessage {
@@ -15,7 +15,7 @@ export interface OpenRouterOptions {
     responseFormat?: { type: 'json_object' };
 }
 
-export const DEFAULT_OPENROUTER_MODEL = 'minimax/minimax-m3:free';
+export const DEFAULT_OPENROUTER_MODEL = 'stealth/space-bunny-alpha';
 
 /**
  * Call OpenRouter Chat Completions endpoint

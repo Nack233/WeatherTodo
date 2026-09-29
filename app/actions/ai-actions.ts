@@ -41,14 +41,14 @@ export async function fetchAiBriefing(data: BriefingInputData): Promise<{ text: 
                     return { text: aiText.trim(), source: 'gemini' };
                 }
             } else {
-                console.warn(`[AI Briefing] Gemini API returned ${response.status}. Switching to OpenRouter MiniMax M3...`);
+                console.warn(`[AI Briefing] Gemini API returned ${response.status}. Switching to OpenRouter Space Bunny Alpha...`);
             }
         } catch (geminiErr) {
-            console.warn('[AI Briefing] Gemini request error. Switching to OpenRouter MiniMax M3...', geminiErr);
+            console.warn('[AI Briefing] Gemini request error. Switching to OpenRouter Space Bunny Alpha...', geminiErr);
         }
     }
 
-    // 2. Fallback to OpenRouter MiniMax M3 (Free)
+    // 2. Fallback to OpenRouter (stealth/space-bunny-alpha)
     try {
         const openRouterText = await callOpenRouterCompletion([
             { role: 'user', content: prompt }
@@ -81,15 +81,34 @@ export async function chatWithNongBase(
     }
 
     const trimmedMsg = message.trim().slice(0, 500);
-    const systemPrompt = buildNongBaseSystemPrompt(data);
+
+    // Fetch relevant user notes / memory context if not already provided
+    const enrichedData = { ...data };
+    if (!enrichedData.notes || enrichedData.notes.length === 0) {
+        try {
+            const { data: userNotes } = await supabase
+                .from('user_notes')
+                .select('title, content, tags, key_facts')
+                .eq('user_id', user.id)
+                .order('is_pinned', { ascending: false })
+                .limit(10);
+            if (userNotes && userNotes.length > 0) {
+                enrichedData.notes = userNotes;
+            }
+        } catch (e) {
+            console.warn('[AI Chat] Could not fetch user notes context:', e);
+        }
+    }
+
+    const systemPrompt = buildNongBaseSystemPrompt(enrichedData);
 
     // 1. Try Gemini first
     const geminiKey = process.env.GEMINI_API_KEY;
     if (geminiKey) {
         try {
-            const geminiPrompt = buildNongBaseChatPrompt(trimmedMsg, history, data);
+            const geminiPrompt = buildNongBaseChatPrompt(trimmedMsg, history, enrichedData);
 
-            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent', {
+            const response = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -108,14 +127,14 @@ export async function chatWithNongBase(
                     return { reply: aiText.trim(), source: 'gemini' };
                 }
             } else {
-                console.warn(`[AI Chat] Gemini API returned ${response.status}. Switching to OpenRouter MiniMax M3...`);
+                console.warn(`[AI Chat] Gemini API returned ${response.status}. Switching to OpenRouter Space Bunny Alpha...`);
             }
         } catch (geminiErr) {
-            console.warn('[AI Chat] Gemini error. Switching to OpenRouter MiniMax M3...', geminiErr);
+            console.warn('[AI Chat] Gemini error. Switching to OpenRouter Space Bunny Alpha...', geminiErr);
         }
     }
 
-    // 2. Fallback to OpenRouter MiniMax M3 (Free)
+    // 2. Fallback to OpenRouter (stealth/space-bunny-alpha)
     try {
         const messages: OpenRouterChatMessage[] = [
             { role: 'system', content: systemPrompt },
@@ -136,7 +155,7 @@ export async function chatWithNongBase(
 
     // 3. Fallback to local rule-based responses
     return {
-        reply: generateSmartMascotReply(trimmedMsg, data),
+        reply: generateSmartMascotReply(trimmedMsg, enrichedData),
         source: 'synthesis'
     };
 }
@@ -144,6 +163,24 @@ export async function chatWithNongBase(
 function generateSmartMascotReply(msg: string, data: BriefingInputData): string {
     const lower = msg.toLowerCase();
     const name = data.userName || 'คุณ';
+
+    // User notes / specs / memory recall fallback
+    if (data.notes && data.notes.length > 0) {
+        const matchedNote = data.notes.find(n => {
+            const words = lower.split(/\s+/).filter(w => w.length > 1);
+            return words.some(w => 
+                n.title.toLowerCase().includes(w) || 
+                (n.tags || []).some(t => t.toLowerCase().includes(w)) ||
+                Object.keys(n.key_facts || {}).some(k => k.toLowerCase().includes(w))
+            );
+        });
+        if (matchedNote) {
+            const factsStr = matchedNote.key_facts && Object.keys(matchedNote.key_facts).length > 0
+                ? '\n' + Object.entries(matchedNote.key_facts).map(([k, v]) => `• ${k}: ${v}`).join('\n')
+                : `\n${matchedNote.content.slice(0, 150)}`;
+            return `น้องเบสค้นเจอข้อมูลจากบันทึก "${matchedNote.title}" ให้แล้วค่าคุณ ${name} ✨:\n${factsStr}\n\nต้องการให้เบสช่วยดูอะไรเพิ่มเติมบอกได้เลยนะคะ 💖`;
+        }
+    }
 
     // Weather
     if (/(อากาศ|ฝน|แดด|ร้อน|หนาว|อุณหภูมิ|สภาพอากาศ)/.test(lower)) {

@@ -30,6 +30,13 @@ export interface BriefingInputData {
         gas95Price?: string | number;
         dieselPrice?: string | number;
     };
+    notesSummary?: string;
+    notes?: {
+        title: string;
+        content: string;
+        tags?: string[];
+        key_facts?: Record<string, string>;
+    }[];
 }
 
 export function generateDailyBriefing(data: BriefingInputData): string {

@@ -711,7 +711,19 @@ export function createHelpFlex(): LineFlexBubble {
                         },
                         {
                             type: 'text',
-                            text: '🔗 • "ผูกบัญชี email@gmail.com"',
+                            text: '📝 • "จดสเปกคอมให้หน่อย CPU Ryzen 5, GPU RTX 9060XT"',
+                            size: 'xs',
+                            color: '#94A3B8',
+                        },
+                        {
+                            type: 'text',
+                            text: '💡 • "สเปกคอมผมคืออะไร"',
+                            size: 'xs',
+                            color: '#94A3B8',
+                        },
+                        {
+                            type: 'text',
+                            text: '🔗 • "ผูกบัญชี 123456"',
                             size: 'xs',
                             color: '#94A3B8',
                         },
@@ -721,3 +733,193 @@ export function createHelpFlex(): LineFlexBubble {
         },
     };
 }
+
+/**
+ * Flex message when a Note/Memory is saved
+ */
+export function createNoteSavedFlex(note: {
+    title: string;
+    category?: string;
+    tags?: string[];
+    key_facts?: Record<string, string>;
+}): LineFlexBubble {
+    const factRows: LineFlexComponent[] = [];
+    if (note.key_facts && Object.keys(note.key_facts).length > 0) {
+        Object.entries(note.key_facts).slice(0, 5).forEach(([key, val]) => {
+            factRows.push({
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                    {
+                        type: 'text',
+                        text: `${key}:`,
+                        size: 'sm',
+                        color: '#94A3B8',
+                        flex: 3,
+                    },
+                    {
+                        type: 'text',
+                        text: String(val),
+                        size: 'sm',
+                        color: '#F8FAFC',
+                        weight: 'bold',
+                        flex: 5,
+                        wrap: true,
+                    },
+                ],
+            });
+        });
+    }
+
+    const tagStr = note.tags && note.tags.length > 0 ? note.tags.map(t => `#${t}`).join(' ') : '#บันทึก';
+
+    return {
+        type: 'bubble',
+        size: 'mega',
+        header: {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#0F172A',
+            paddingAll: '16px',
+            contents: [
+                {
+                    type: 'text',
+                    text: '📝 บันทึกลงสมุดความจำแล้วค่า ✨',
+                    weight: 'bold',
+                    size: 'md',
+                    color: '#818CF8',
+                },
+            ],
+        },
+        body: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'md',
+            backgroundColor: '#1E293B',
+            paddingAll: '16px',
+            contents: [
+                {
+                    type: 'text',
+                    text: note.title,
+                    weight: 'bold',
+                    size: 'lg',
+                    color: '#FFFFFF',
+                    wrap: true,
+                },
+                {
+                    type: 'text',
+                    text: tagStr,
+                    size: 'xs',
+                    color: '#818CF8',
+                },
+                ...(factRows.length > 0
+                    ? [
+                          {
+                              type: 'separator' as const,
+                              color: '#334155',
+                          },
+                          ...factRows,
+                      ]
+                    : []),
+            ],
+        },
+    };
+}
+
+/**
+ * Flex message when recalling/answering a Note query
+ */
+export function createNoteAnswerFlex(
+    answer: string,
+    sourceNote: {
+        title: string;
+        key_facts?: Record<string, string>;
+    }
+): LineFlexBubble {
+    const factRows: LineFlexComponent[] = [];
+    if (sourceNote.key_facts && Object.keys(sourceNote.key_facts).length > 0) {
+        Object.entries(sourceNote.key_facts).slice(0, 6).forEach(([key, val]) => {
+            factRows.push({
+                type: 'box',
+                layout: 'horizontal',
+                spacing: 'sm',
+                contents: [
+                    {
+                        type: 'text',
+                        text: `${key}:`,
+                        size: 'sm',
+                        color: '#94A3B8',
+                        flex: 3,
+                    },
+                    {
+                        type: 'text',
+                        text: String(val),
+                        size: 'sm',
+                        color: '#38BDF8',
+                        weight: 'bold',
+                        flex: 5,
+                        wrap: true,
+                    },
+                ],
+            });
+        });
+    }
+
+    return {
+        type: 'bubble',
+        size: 'mega',
+        header: {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#0F172A',
+            paddingAll: '16px',
+            contents: [
+                {
+                    type: 'text',
+                    text: '💡 ข้อมูลจากสมุดความจำ ✨',
+                    weight: 'bold',
+                    size: 'md',
+                    color: '#38BDF8',
+                },
+            ],
+        },
+        body: {
+            type: 'box',
+            layout: 'vertical',
+            spacing: 'md',
+            backgroundColor: '#1E293B',
+            paddingAll: '16px',
+            contents: [
+                {
+                    type: 'text',
+                    text: answer,
+                    size: 'sm',
+                    color: '#F8FAFC',
+                    wrap: true,
+                },
+                ...(factRows.length > 0
+                    ? [
+                          {
+                              type: 'separator' as const,
+                              color: '#334155',
+                          },
+                          ...factRows,
+                      ]
+                    : []),
+                {
+                    type: 'separator',
+                    color: '#334155',
+                },
+                {
+                    type: 'text',
+                    text: `📌 อ้างอิงจาก: "${sourceNote.title}"`,
+                    size: 'xs',
+                    color: '#94A3B8',
+                    wrap: true,
+                },
+            ],
+        },
+    };
+}
+
