@@ -28,6 +28,13 @@ const COLOR_OPTIONS = [
     { id: 'tag-rose', label: 'ชมพู', color: '#F43F5E' },
 ];
 
+const QUICK_PROMPTS = [
+    { label: 'สเปกคอมผมอะไรนะ?', icon: '💻' },
+    { label: 'ข้อมูลและรหัสสำคัญ', icon: '🔑' },
+    { label: 'โปรเจกต์งานที่กำลังทำ', icon: '💼' },
+    { label: 'สรุปรายการที่บันทึกไว้', icon: '📝' },
+];
+
 export default function NotesTab() {
     const {
         notes,
@@ -65,6 +72,7 @@ export default function NotesTab() {
     const [askQuery, setAskQuery] = useState('');
     const [isAskingAi, setIsAskingAi] = useState(false);
     const [aiAnswer, setAiAnswer] = useState<string | null>(null);
+    const [copiedAnswer, setCopiedAnswer] = useState(false);
 
     // Open Modal for New Note
     const handleOpenNewModal = () => {
@@ -146,6 +154,15 @@ export default function NotesTab() {
         });
     };
 
+    // Copy AI Answer
+    const handleCopyAnswer = () => {
+        if (!aiAnswer) return;
+        navigator.clipboard.writeText(aiAnswer).then(() => {
+            setCopiedAnswer(true);
+            setTimeout(() => setCopiedAnswer(false), 2000);
+        });
+    };
+
     // Ask Nong Base from Knowledge Base
     const handleAskNongBase = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -184,7 +201,7 @@ export default function NotesTab() {
 
     return (
         <div className="notes-container">
-            {/* 1. Header & Stats Section */}
+            {/* 1. Header & Bento Stats Section */}
             <div className="notes-header">
                 <div className="notes-title-group">
                     <div className="notes-header-icon">
@@ -193,40 +210,65 @@ export default function NotesTab() {
                     <div className="notes-title-text">
                         <h2>
                             สมุดโน้ตและความจำ AI
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#A855F7', background: 'rgba(168, 85, 247, 0.15)', padding: '0.2rem 0.6rem', borderRadius: '12px' }}>
-                                Second Brain
-                            </span>
+                            <span className="notes-title-badge">Second Brain</span>
                         </h2>
                         <p>จดบันทึกสเปกคอม, ข้อมูลสำคัญ หรือสิ่งของ เพื่อให้น้องเบสช่วยจำและตอบคำถามได้ตลอด 24 ชม.</p>
                     </div>
                 </div>
 
-                <div className="notes-header-actions">
-                    <button className="btn-card-action" onClick={refreshNotes} title="รีเฟรชข้อมูล">
-                        <RefreshCw size={18} />
-                    </button>
-                    <button className="btn-new-note" onClick={handleOpenNewModal}>
-                        <Plus size={18} />
-                        <span>จดบันทึกใหม่</span>
-                    </button>
+                <div className="notes-header-right">
+                    <div className="notes-header-stats-chips">
+                        <span className="notes-stat-chip">
+                            📝 บันทึกทั้งหมด: <strong>{stats.total}</strong>
+                        </span>
+                        <span className="notes-stat-chip">
+                            📌 ปักหมุด: <strong>{stats.pinned}</strong>
+                        </span>
+                    </div>
+
+                    <div className="notes-header-actions">
+                        <button 
+                            className="btn-header-refresh" 
+                            onClick={refreshNotes} 
+                            title="รีเฟรชข้อมูล"
+                            disabled={isLoading}
+                        >
+                            <RefreshCw size={18} className={isLoading ? 'animate-spin' : ''} />
+                        </button>
+                        <button className="btn-new-note" onClick={handleOpenNewModal}>
+                            <Plus size={18} />
+                            <span>จดบันทึกใหม่</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* 2. Ask Nong Base Knowledge Bar */}
+            {/* 2. Ask Nong Base Knowledge Bar (21st.dev Bento Command Bar) */}
             <div className="notes-ask-card">
+                <div className="notes-ask-glow" />
+
                 <div className="notes-ask-header">
-                    <Bot size={18} />
-                    <span>ถามน้องเบสจากสมุดบันทึกความจำ (AI Knowledge Recall)</span>
+                    <div className="notes-ask-header-title">
+                        <Bot size={19} />
+                        <span>ถามน้องเบสจากสมุดบันทึกความจำ (AI Knowledge Recall)</span>
+                    </div>
+                    <div className="notes-ask-header-hint">
+                        <Sparkles size={14} />
+                        <span>ค้นหาความจำแบบเรียลไทม์</span>
+                    </div>
                 </div>
+
                 <form onSubmit={handleAskNongBase} className="notes-ask-input-wrap">
-                    <Search size={18} className="notes-ask-input-icon" />
-                    <input
-                        type="text"
-                        className="notes-ask-input"
-                        placeholder="ลองถามน้องเบส เช่น &quot;สเปกคอมผมอะไรนะ&quot; หรือ &quot;การ์ดจอผมรุ่นไหน&quot;..."
-                        value={askQuery}
-                        onChange={e => setAskQuery(e.target.value)}
-                    />
+                    <div className="notes-input-field-wrapper">
+                        <Sparkles size={18} className="notes-ask-input-icon" />
+                        <input
+                            type="text"
+                            className="notes-ask-input"
+                            placeholder="ลองถามน้องเบส เช่น &quot;สเปกคอมผมอะไรนะ&quot; หรือ &quot;การ์ดจอผมรุ่นไหน&quot;..."
+                            value={askQuery}
+                            onChange={e => setAskQuery(e.target.value)}
+                        />
+                    </div>
                     <button type="submit" className="btn-ask-ai" disabled={isAskingAi || !askQuery.trim()}>
                         {isAskingAi ? (
                             <>
@@ -242,19 +284,44 @@ export default function NotesTab() {
                     </button>
                 </form>
 
+                {/* Quick Suggestion Prompts */}
+                <div className="notes-quick-prompts">
+                    <span className="notes-prompt-label">💡 ตัวอย่างคำถาม:</span>
+                    {QUICK_PROMPTS.map((prompt, idx) => (
+                        <button
+                            key={idx}
+                            type="button"
+                            className="notes-prompt-pill"
+                            onClick={() => setAskQuery(prompt.label)}
+                        >
+                            <span>{prompt.icon}</span>
+                            <span>{prompt.label}</span>
+                        </button>
+                    ))}
+                </div>
+
                 {aiAnswer && (
                     <div className="notes-ai-answer-box">
                         <div className="notes-ai-answer-top">
                             <span className="notes-ai-badge">
                                 <Bot size={14} /> น้องเบสตอบกลับ
                             </span>
-                            <button
-                                className="btn-card-action"
-                                onClick={() => setAiAnswer(null)}
-                                title="ปิดคำตอบ"
-                            >
-                                <X size={15} />
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <button
+                                    className="btn-card-action"
+                                    onClick={handleCopyAnswer}
+                                    title={copiedAnswer ? 'คัดลอกแล้ว!' : 'คัดลอกคำตอบ'}
+                                >
+                                    {copiedAnswer ? <Check size={15} color="#10B981" /> : <Copy size={15} />}
+                                </button>
+                                <button
+                                    className="btn-card-action"
+                                    onClick={() => setAiAnswer(null)}
+                                    title="ปิดคำตอบ"
+                                >
+                                    <X size={15} />
+                                </button>
+                            </div>
                         </div>
                         <div className="notes-ai-answer-content">{aiAnswer}</div>
                     </div>
@@ -264,7 +331,7 @@ export default function NotesTab() {
             {/* 3. Controls Bar: Search & Category Pills */}
             <div className="notes-controls-bar">
                 <div className="notes-search-wrap">
-                    <Search size={17} className="notes-search-icon" />
+                    <Search size={18} className="notes-search-icon" />
                     <input
                         type="text"
                         className="notes-search-input"
@@ -272,6 +339,27 @@ export default function NotesTab() {
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                     />
+                    {searchQuery && (
+                        <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            style={{
+                                position: 'absolute',
+                                right: '1rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'transparent',
+                                border: 'none',
+                                color: 'var(--text-secondary)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                            }}
+                            title="ล้างข้อความค้นหา"
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
 
                 <div className="notes-category-pills">
@@ -300,8 +388,8 @@ export default function NotesTab() {
                                 <span>{cat.icon}</span>
                                 <span>{cat.label}</span>
                                 {count !== undefined && count > 0 && (
-                                    <span style={{ fontSize: '0.72rem', opacity: 0.75, marginLeft: '0.15rem' }}>
-                                        ({count})
+                                    <span className="category-pill-count">
+                                        {count}
                                     </span>
                                 )}
                             </button>
@@ -312,7 +400,7 @@ export default function NotesTab() {
 
             {/* Error Message */}
             {error && (
-                <div style={{ padding: '0.75rem 1rem', background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', color: '#FCA5A5', fontSize: '0.88rem' }}>
+                <div style={{ padding: '0.85rem 1.25rem', background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '14px', color: '#FCA5A5', fontSize: '0.88rem' }}>
                     {error}
                 </div>
             )}
@@ -327,7 +415,7 @@ export default function NotesTab() {
                                 height: '220px',
                                 background: 'var(--bg-card)',
                                 border: '1px solid var(--border-color)',
-                                borderRadius: '16px',
+                                borderRadius: '20px',
                                 animation: 'skeleton-shimmer 1.5s infinite linear',
                             }}
                         />
@@ -441,7 +529,7 @@ export default function NotesTab() {
                                         title="คัดลอกข้อมูล/สเปกนี้"
                                     >
                                         {isCopied ? (
-                                            <>
+                                             <>
                                                 <Check size={14} />
                                                 <span>คัดลอกแล้ว!</span>
                                             </>
