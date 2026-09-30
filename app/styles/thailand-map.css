@@ -1,0 +1,983 @@
+/* ============================================================
+   THAILAND WEATHER MAP SELECTOR MODAL STYLES (DARK & LIGHT)
+   ============================================================ */
+
+/* 1. Backdrop Overlay */
+.thai-map-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 1rem;
+    animation: fadeIn 0.25s ease-out;
+}
+
+/* 2. Main Modal Container */
+.thai-map-modal {
+    background: var(--bg-card, #131d31);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.15);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 1080px;
+    max-height: 92vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    color: var(--text-primary, #f1f5f9);
+    animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+/* 3. Modal Header */
+.thai-map-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.15rem 1.5rem;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.thai-map-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.thai-map-header-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(59, 130, 246, 0.2));
+    border: 1px solid rgba(6, 182, 212, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-cyan, #06b6d4);
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+}
+
+.thai-map-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary, #f8fafc);
+    letter-spacing: -0.2px;
+}
+
+.thai-map-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-muted, #94a3b8);
+    margin: 0.2rem 0 0 0;
+}
+
+.thai-map-close-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    color: var(--text-secondary, #cbd5e1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.thai-map-close-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+    transform: rotate(90deg);
+}
+
+/* 4. Controls Bar (Search + Regions) */
+.thai-map-controls {
+    padding: 0.85rem 1.5rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.06));
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    justify-content: space-between;
+}
+
+.thai-map-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 250px;
+    max-width: 360px;
+}
+
+.thai-map-search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--text-muted, #94a3b8);
+    pointer-events: none;
+    z-index: 5;
+    flex-shrink: 0;
+}
+
+/* Overriding global input styles with high specificity to prevent text/icon overlap */
+input[type="text"].thai-map-search-input,
+.thai-map-search-input {
+    width: 100% !important;
+    padding: 0.6rem 1rem 0.6rem 2.85rem !important;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 12px !important;
+    font-size: 0.88rem !important;
+    color: var(--text-primary, #f1f5f9);
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    font-family: inherit !important;
+    box-sizing: border-box !important;
+}
+
+input[type="text"].thai-map-search-input:focus,
+.thai-map-search-input:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--accent-cyan, #06b6d4) !important;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.25) !important;
+}
+
+.thai-map-region-pills {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+    flex-shrink: 0;
+}
+
+.thai-map-region-pills::-webkit-scrollbar {
+    display: none;
+}
+
+.thai-map-region-btn {
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary, #cbd5e1);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.thai-map-region-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.thai-map-region-btn.active {
+    background: var(--accent-cyan, #06b6d4) !important;
+    color: #0b1120 !important;
+    font-weight: 700;
+    border-color: transparent !important;
+    box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+}
+
+/* 5. Modal Body Layout */
+.thai-map-body {
+    display: flex;
+    flex: 1;
+    min-height: 480px;
+    max-height: calc(92vh - 160px);
+    overflow: hidden;
+    position: relative;
+}
+
+/* 6. Map Canvas Viewport */
+.thai-map-viewport {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.5) 0%, rgba(8, 12, 22, 0.88) 100%);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+.thai-map-svg-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    user-select: none;
+}
+
+.thai-map-svg {
+    max-width: 100%;
+    max-height: 100%;
+    width: auto;
+    height: 94%;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.4));
+}
+
+/* Province Path Styling */
+.thai-province-path {
+    cursor: pointer;
+    transition: fill 0.25s ease, stroke 0.2s ease, opacity 0.25s ease, filter 0.2s ease;
+    outline: none;
+    stroke: rgba(255, 255, 255, 0.3);
+    stroke-width: 0.6;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+}
+
+.thai-province-path:hover {
+    stroke: #ffffff !important;
+    stroke-width: 1.6 !important;
+    filter: brightness(1.25) drop-shadow(0 0 6px rgba(255, 255, 255, 0.6));
+    opacity: 1 !important;
+}
+
+.thai-province-path.active {
+    stroke: #38bdf8 !important;
+    stroke-width: 2.4 !important;
+    filter: brightness(1.35) drop-shadow(0 0 10px rgba(56, 189, 248, 0.85));
+    opacity: 1 !important;
+}
+
+.thai-province-path.dimmed {
+    opacity: 0.25;
+}
+
+.thai-province-path.highlighted {
+    stroke: #f59e0b !important;
+    stroke-width: 2 !important;
+    filter: brightness(1.3) drop-shadow(0 0 8px rgba(245, 158, 11, 0.8));
+    opacity: 1 !important;
+}
+
+/* Zoom Tools */
+.thai-map-zoom-tools {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    z-index: 10;
+}
+
+.thai-map-zoom-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(19, 29, 49, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    color: var(--text-primary, #f1f5f9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+.thai-map-zoom-btn:hover {
+    background: rgba(6, 182, 212, 0.2);
+    border-color: var(--accent-cyan, #06b6d4);
+    color: var(--accent-cyan, #06b6d4);
+    transform: translateY(-2px);
+}
+
+/* Tooltip Badge */
+.thai-map-hover-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1.25rem;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.15));
+    padding: 0.4rem 0.85rem;
+    border-radius: 10px;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    animation: fadeIn 0.15s ease-out;
+    z-index: 10;
+}
+
+/* 7. Side Preview Panel */
+.thai-map-side-panel {
+    width: 340px;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(12px);
+    border-left: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 1.5rem;
+    z-index: 20;
+    overflow-y: auto;
+    transition: background 0.3s ease;
+}
+
+.thai-preview-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    color: var(--text-muted, #94a3b8);
+    padding: 2rem 1rem;
+}
+
+.thai-preview-empty-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.04);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    color: var(--accent-cyan, #06b6d4);
+}
+
+.thai-preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.thai-preview-badge-region {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary, #cbd5e1);
+    width: fit-content;
+}
+
+.thai-preview-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    color: var(--text-primary, #f8fafc);
+    line-height: 1.2;
+}
+
+.thai-preview-title-en {
+    font-size: 0.92rem;
+    color: var(--text-muted, #94a3b8);
+    margin-top: 0.15rem;
+}
+
+/* District Chips in Map Preview */
+.thai-preview-districts-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    margin: 0.15rem 0 0.5rem 0;
+}
+
+.thai-preview-districts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text-muted, #94a3b8);
+}
+
+.thai-district-reset-btn {
+    background: none;
+    border: none;
+    color: var(--accent-cyan, #06b6d4);
+    font-size: 0.74rem;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+    font-family: inherit;
+}
+
+.thai-district-chips-scroll {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.thai-district-chip {
+    padding: 0.3rem 0.6rem;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-secondary, #cbd5e1);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    font-family: inherit;
+}
+
+.thai-district-chip:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.thai-district-chip.active {
+    background: var(--accent-cyan, #06b6d4) !important;
+    color: #0b1120 !important;
+    font-weight: 700;
+    border-color: transparent !important;
+    box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+/* Light Mode District Chips */
+[data-theme="light"] .thai-district-chip {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: #334155;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .thai-district-chip:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .thai-district-chip.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+[data-theme="light"] .thai-preview-districts-header {
+    color: #64748b;
+}
+
+[data-theme="light"] .thai-district-reset-btn {
+    color: #0284c7;
+}
+
+/* Weather Mini Box */
+.thai-preview-weather-box {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    border-radius: 16px;
+    padding: 1.2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.thai-preview-weather-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.thai-preview-temp {
+    font-size: 2.4rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--text-primary, #f8fafc);
+    line-height: 1;
+}
+
+.thai-preview-condition-icon {
+    width: 44px;
+    height: 44px;
+    color: #f59e0b;
+}
+
+.thai-preview-condition-text {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-secondary, #cbd5e1);
+    margin-top: 0.4rem;
+}
+
+.thai-preview-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.thai-preview-metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.thai-preview-metric-label {
+    font-size: 0.75rem;
+    color: var(--text-muted, #94a3b8);
+}
+
+.thai-preview-metric-val {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary, #f1f5f9);
+}
+
+/* Primary Action Button */
+.thai-preview-select-btn {
+    width: 100%;
+    padding: 0.85rem 1.25rem;
+    background: linear-gradient(135deg, #06b6d4, #3b82f6);
+    color: #ffffff;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.4);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.thai-preview-select-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.55);
+    filter: brightness(1.08);
+}
+
+.thai-preview-select-btn:active {
+    transform: translateY(0);
+}
+
+.thai-preview-select-btn.active-loc {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #10b981;
+    box-shadow: none;
+    cursor: default;
+}
+
+/* Replacement Dialog Overlay */
+.thai-replace-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 1.5rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.thai-replace-dialog {
+    background: var(--bg-card, #131d31);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(245, 158, 11, 0.15);
+    border-radius: 16px;
+    padding: 1.5rem;
+    max-width: 480px;
+    width: 100%;
+}
+
+.thai-replace-dialog-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f59e0b;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.thai-replace-dialog-desc {
+    font-size: 0.86rem;
+    color: var(--text-secondary, #cbd5e1);
+    margin: 0 0 1.25rem 0;
+    line-height: 1.5;
+}
+
+.thai-replace-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+    max-height: 240px;
+    overflow-y: auto;
+}
+
+.thai-replace-item-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    color: var(--text-primary, #f1f5f9);
+    cursor: pointer;
+    font-size: 0.88rem;
+    transition: all 0.15s ease;
+    text-align: left;
+}
+
+.thai-replace-item-btn:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    transform: translateX(4px);
+}
+
+.thai-replace-cancel-btn {
+    width: 100%;
+    padding: 0.65rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    border-radius: 10px;
+    color: var(--text-secondary, #cbd5e1);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.thai-replace-cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+/* ============================================================
+   LIGHT THEME OVERRIDES — CLEAN, CRISP & MODERN CONTRAST
+   ============================================================ */
+
+[data-theme="light"] .thai-map-modal-backdrop {
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(8px);
+}
+
+[data-theme="light"] .thai-map-modal {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 25px rgba(6, 182, 212, 0.1);
+    color: #0f172a;
+}
+
+[data-theme="light"] .thai-map-header {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .thai-map-header-icon {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(59, 130, 246, 0.12));
+    border-color: rgba(6, 182, 212, 0.25);
+    color: #0891b2;
+}
+
+[data-theme="light"] .thai-map-title {
+    color: #0f172a;
+}
+
+[data-theme="light"] .thai-map-subtitle {
+    color: #64748b;
+}
+
+[data-theme="light"] .thai-map-close-btn {
+    background: #f1f5f9;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #475569;
+}
+
+[data-theme="light"] .thai-map-close-btn:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+/* Light Mode Controls Bar */
+[data-theme="light"] .thai-map-controls {
+    background: #f8fafc;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] input[type="text"].thai-map-search-input {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+[data-theme="light"] input[type="text"].thai-map-search-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] input[type="text"].thai-map-search-input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+
+[data-theme="light"] .thai-map-search-icon {
+    color: #64748b;
+}
+
+/* Light Mode Region Filter Buttons */
+[data-theme="light"] .thai-map-region-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: #334155;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .thai-map-region-btn:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .thai-map-region-btn.active {
+    background: #0284c7 !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+}
+
+/* Light Mode Map Canvas Viewport */
+[data-theme="light"] .thai-map-viewport {
+    background: radial-gradient(circle at 50% 50%, #f8fafc 0%, #edf2f7 100%);
+}
+
+[data-theme="light"] .thai-province-path {
+    stroke: rgba(255, 255, 255, 0.85);
+    stroke-width: 0.8;
+}
+
+[data-theme="light"] .thai-province-path:hover {
+    stroke: #0f172a !important;
+    stroke-width: 1.8 !important;
+    filter: brightness(1.1) drop-shadow(0 0 8px rgba(0, 0, 0, 0.25));
+}
+
+[data-theme="light"] .thai-province-path.active {
+    stroke: #0284c7 !important;
+    stroke-width: 2.6 !important;
+    filter: brightness(1.15) drop-shadow(0 0 10px rgba(2, 132, 199, 0.6));
+}
+
+[data-theme="light"] .thai-map-zoom-btn {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: #334155;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .thai-map-zoom-btn:hover {
+    background: #f1f5f9;
+    color: #0284c7;
+    border-color: #0284c7;
+}
+
+[data-theme="light"] .thai-map-hover-badge {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    color: #0f172a;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Light Mode Side Preview Panel */
+[data-theme="light"] .thai-map-side-panel {
+    background: #ffffff;
+    border-left: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .thai-preview-badge-region {
+    background: rgba(2, 132, 199, 0.08);
+    border: 1px solid rgba(2, 132, 199, 0.2);
+    color: #0284c7;
+}
+
+[data-theme="light"] .thai-preview-title {
+    color: #0f172a;
+}
+
+[data-theme="light"] .thai-preview-title-en {
+    color: #64748b;
+}
+
+[data-theme="light"] .thai-preview-weather-box {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+[data-theme="light"] .thai-preview-temp {
+    color: #0f172a;
+}
+
+[data-theme="light"] .thai-preview-condition-text {
+    color: #334155;
+}
+
+[data-theme="light"] .thai-preview-metrics {
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="light"] .thai-preview-metric-label {
+    color: #64748b;
+}
+
+[data-theme="light"] .thai-preview-metric-val {
+    color: #0f172a;
+}
+
+[data-theme="light"] .thai-preview-select-btn {
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+}
+
+[data-theme="light"] .thai-preview-select-btn:hover {
+    box-shadow: 0 8px 25px rgba(37, 99, 235, 0.45);
+}
+
+[data-theme="light"] .thai-preview-select-btn.active-loc {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: #059669;
+}
+
+/* Light Mode Replacement Dialog */
+[data-theme="light"] .thai-replace-dialog {
+    background: #ffffff;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .thai-replace-dialog-desc {
+    color: #475569;
+}
+
+[data-theme="light"] .thai-replace-item-btn {
+    background: #f8fafc;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: #0f172a;
+}
+
+[data-theme="light"] .thai-replace-item-btn:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #dc2626;
+}
+
+[data-theme="light"] .thai-replace-cancel-btn {
+    background: #f1f5f9;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #475569;
+}
+
+[data-theme="light"] .thai-replace-cancel-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+/* 8. Interactive Location Badge in Sidebar Footer */
+.location-badge.interactive {
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    user-select: none;
+}
+
+.location-badge.interactive:hover {
+    background: rgba(6, 182, 212, 0.12);
+    border-color: rgba(6, 182, 212, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+}
+
+.location-badge.interactive:hover svg {
+    color: var(--accent-cyan, #06b6d4);
+    transform: scale(1.15);
+}
+
+.location-badge.interactive:active {
+    transform: translateY(0);
+}
+
+/* Light mode sidebar location badge hover */
+[data-theme="light"] .location-badge.interactive:hover {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: rgba(2, 132, 199, 0.35);
+    box-shadow: 0 4px 15px rgba(2, 132, 199, 0.12);
+}
+
+/* 9. Responsive Adjustments */
+@media (max-width: 860px) {
+    .thai-map-modal {
+        max-height: 96vh;
+    }
+    .thai-map-body {
+        flex-direction: column;
+        max-height: calc(96vh - 150px);
+        overflow-y: auto;
+    }
+    .thai-map-viewport {
+        min-height: 340px;
+        height: 380px;
+    }
+    .thai-map-side-panel {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    }
+    [data-theme="light"] .thai-map-side-panel {
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+    }
+}

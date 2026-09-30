@@ -38,6 +38,8 @@ const Notes      = dynamic(() => import('./notes'),       { loading: () => <TabS
 
 // Floating assistant widget lazy loaded on client
 const MascotLineWidget = dynamic(() => import('@/app/components/MascotLineWidget'), { ssr: false });
+const ThailandMapModal = dynamic(() => import('./thailand-map-modal').then((mod) => mod.ThailandMapModal), { ssr: false });
+import { useWeather } from '@/hooks/use-weather';
 
 // Icons
 import { 
@@ -100,6 +102,8 @@ function DashboardContent() {
 
     const [currentDateStr, setCurrentDateStr] = useState<string>('');
     const [locationBadge, setLocationBadge] = useState<string>('ไทย');
+    const [isMapModalOpen, setIsMapModalOpen] = useState<boolean>(false);
+    const { locations, activeId, selectLocation, addLocation, replaceLocation } = useWeather();
 
     // Dynamic location badge from localStorage (event-driven, no polling)
     useEffect(() => {
@@ -253,7 +257,14 @@ function DashboardContent() {
                     </button>
                 </nav>
                 <div className="sidebar-footer">
-                    <div className="location-badge">
+                    <div 
+                        className="location-badge interactive"
+                        onClick={() => setIsMapModalOpen(true)}
+                        role="button"
+                        tabIndex={0}
+                        title="คลิกเพื่อเลือกจังหวัดบนแผนที่ประเทศไทย"
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setIsMapModalOpen(true); }}
+                    >
                         <div className="location-badge-inner">
                             <MapPin size={15} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
                             <span className="location-badge-text">{locationBadge}</span>
@@ -354,6 +365,26 @@ function DashboardContent() {
 
             {/* Floating Mascot LINE Bot Assistant Widget */}
             <MascotLineWidget userEmail={user?.email || ''} userName={user?.name || 'คุณ'} />
+
+            {/* Thailand Weather Map Modal */}
+            <ThailandMapModal
+                isOpen={isMapModalOpen}
+                onClose={() => setIsMapModalOpen(false)}
+                existingLocations={locations}
+                activeLocationId={activeId}
+                onSelectLocation={(loc) => {
+                    if (locations.some((l) => l.id === loc.id)) {
+                        selectLocation(loc.id);
+                    } else {
+                        addLocation(loc);
+                    }
+                    handleTabChange('weather');
+                }}
+                onReplaceLocation={(oldId, newLoc) => {
+                    replaceLocation(oldId, newLoc);
+                    handleTabChange('weather');
+                }}
+            />
         </div>
     );
 }

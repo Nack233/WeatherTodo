@@ -84,11 +84,21 @@ export function useWeather() {
     const [updateTime, setUpdateTime] = useState<string>('--:--');
     const [isLoading, setIsLoading] = useState<boolean>(true);
 
-    // Init from localStorage
+    // Init from localStorage & listen for changes
     useEffect(() => {
-        const locs = loadSavedLocations();
-        setLocations(locs);
-        setActiveId(loadActiveId(locs));
+        const reload = () => {
+            const locs = loadSavedLocations();
+            setLocations(locs);
+            setActiveId(loadActiveId(locs));
+        };
+        reload();
+
+        window.addEventListener('storage', reload);
+        window.addEventListener('weather_location_change', reload);
+        return () => {
+            window.removeEventListener('storage', reload);
+            window.removeEventListener('weather_location_change', reload);
+        };
     }, []);
 
     const fetchWeather = useCallback(async (loc: SavedLocation, force = false) => {
@@ -194,6 +204,13 @@ export function useWeather() {
         }
     };
 
+    const replaceLocation = (oldId: string, newLoc: SavedLocation) => {
+        const next = locations.map((l) => (l.id === oldId ? newLoc : l));
+        setLocations(next);
+        saveLocations(next);
+        selectLocation(newLoc.id);
+    };
+
     return {
         locations,
         activeId,
@@ -204,6 +221,7 @@ export function useWeather() {
         fetchWeather,
         selectLocation,
         addLocation,
+        replaceLocation,
         removeLocation,
     };
 }

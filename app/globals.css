@@ -19,6 +19,8 @@
 
 /* 6. Dashboard Tab 2: Weather Details & Location Picker */
 @import './styles/weather.css';
+@import './styles/thailand-map.css';
+@import './styles/location-picker.css';
 
 /* 7. Dashboard Tabs 3-5: To-Do, Calendar, Tracker */
 @import './styles/features.css';

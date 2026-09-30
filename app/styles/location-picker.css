@@ -1,0 +1,741 @@
+/* ============================================================
+   ENHANCED LOCATION PICKER MODAL STYLES (DISTRICT SEARCH)
+   DARK & LIGHT THEME SUPPORT
+   ============================================================ */
+
+/* 0. Backdrop z-index guarantee */
+.loc-modal-backdrop {
+    z-index: 9999 !important;
+}
+
+/* 1. Modal Container Override */
+.enhanced-loc-modal {
+    max-width: 900px !important;
+    width: 92% !important;
+    max-height: 86vh !important;
+    height: 660px !important;
+    border-radius: 20px;
+    background: var(--bg-card, #131d31);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 30px rgba(6, 182, 212, 0.15);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* 2. Mode Switcher Tabs */
+.loc-tab-bar {
+    display: flex;
+    gap: 0.5rem;
+    padding: 0.6rem 1.5rem;
+    border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    background: rgba(0, 0, 0, 0.18);
+}
+
+.loc-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary, #94a3b8);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.loc-tab-btn:hover {
+    color: var(--text-primary, #f1f5f9);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.loc-tab-btn.active {
+    background: rgba(6, 182, 212, 0.14);
+    border-color: rgba(6, 182, 212, 0.35);
+    color: var(--accent-cyan, #06b6d4);
+}
+
+/* 3. Split 2-Column Body */
+.loc-modal-split-body {
+    display: flex !important;
+    flex-direction: row !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+.loc-search-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1.5rem;
+    overflow-y: auto;
+    border-right: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.loc-preview-col {
+    width: 320px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem 1.5rem;
+    background: rgba(0, 0, 0, 0.15);
+    overflow-y: auto;
+}
+
+/* 4. Search Bar */
+.enhanced-loc-modal .loc-search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 0.85rem;
+}
+
+.enhanced-loc-modal .loc-search-icon {
+    position: absolute;
+    left: 1rem;
+    color: var(--accent-cyan, #06b6d4);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.enhanced-loc-modal .loc-search-spinner {
+    position: absolute;
+    right: 1rem;
+    color: var(--accent-cyan, #06b6d4);
+    z-index: 2;
+}
+
+input[type="text"].loc-search-input {
+    width: 100% !important;
+    padding-left: 2.85rem !important;
+    padding-right: 2.85rem !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    background: var(--bg-input, rgba(255, 255, 255, 0.05));
+    color: var(--text-primary, #f1f5f9);
+    font-size: 0.92rem;
+    font-family: inherit;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+input[type="text"].loc-search-input:focus {
+    border-color: var(--accent-cyan, #06b6d4);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
+}
+
+.loc-search-clear-btn {
+    position: absolute;
+    right: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #94a3b8);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.loc-search-clear-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary, #f1f5f9);
+}
+
+[data-theme="light"] .loc-search-clear-btn:hover {
+    background: rgba(0, 0, 0, 0.08);
+    color: #0f172a;
+}
+
+/* 5. Section Labels & Popular Chips */
+.loc-section-label {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted, #94a3b8);
+    margin-bottom: 0.65rem;
+}
+
+.loc-popular-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+}
+
+.loc-popular-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.65rem 0.85rem;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    color: var(--text-primary, #e2e8f0);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    text-align: left;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.loc-popular-chip-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.loc-popular-chip-prov {
+    font-size: 0.75rem;
+    opacity: 0.65;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+}
+
+.loc-popular-chip:hover {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: rgba(6, 182, 212, 0.3);
+    transform: translateY(-1px);
+}
+
+.loc-popular-chip.active {
+    background: rgba(6, 182, 212, 0.18);
+    border-color: var(--accent-cyan, #06b6d4);
+    color: var(--accent-cyan, #06b6d4);
+    font-weight: 600;
+}
+
+/* 6. Results List & Cards */
+.loc-results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.loc-result-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 0.95rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.07));
+    color: var(--text-primary, #f1f5f9);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.loc-result-card:hover {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: rgba(6, 182, 212, 0.3);
+    transform: translateX(3px);
+}
+
+.loc-result-card.active {
+    background: rgba(6, 182, 212, 0.16);
+    border-color: var(--accent-cyan, #06b6d4);
+    box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+}
+
+.loc-result-badge-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(6, 182, 212, 0.15);
+    color: var(--accent-cyan, #06b6d4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.loc-result-badge-icon.online {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+.loc-tag-badge {
+    font-size: 0.68rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 6px;
+    background: rgba(6, 182, 212, 0.15);
+    color: var(--accent-cyan, #06b6d4);
+    font-weight: 600;
+}
+
+.loc-tag-badge.sub {
+    background: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+}
+
+/* 7. Browse Mode (Region Pills, Province Grid, District Grid) */
+.loc-browse-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.loc-region-nav-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+    position: relative;
+}
+
+.loc-region-nav-btn {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.12));
+    color: var(--text-secondary, #cbd5e1);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    padding: 0;
+}
+
+.loc-region-nav-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.18);
+    color: var(--text-primary, #ffffff);
+    border-color: var(--accent-cyan, #06b6d4);
+    transform: scale(1.08);
+}
+
+.loc-region-nav-btn:active:not(:disabled) {
+    transform: scale(0.94);
+}
+
+.loc-region-nav-btn:disabled,
+.loc-region-nav-btn.hidden {
+    opacity: 0.2;
+    cursor: not-allowed;
+    transform: none;
+    pointer-events: none;
+}
+
+.loc-region-filter-bar {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding: 0.25rem 0.1rem;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    scroll-behavior: smooth;
+    flex: 1;
+    min-width: 0;
+    cursor: grab;
+    user-select: none;
+}
+
+.loc-region-filter-bar:active {
+    cursor: grabbing;
+}
+
+.loc-region-filter-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.loc-region-pill {
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    color: var(--text-secondary, #cbd5e1);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.loc-region-pill:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary, #f8fafc);
+}
+
+.loc-region-pill.active {
+    background: var(--accent-cyan, #06b6d4);
+    color: #041019;
+    border-color: var(--accent-cyan, #06b6d4);
+    font-weight: 700;
+}
+
+.loc-province-grid,
+.loc-district-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.65rem !important;
+    max-height: 420px;
+    overflow-y: auto;
+    padding-right: 0.35rem;
+}
+
+.loc-province-card-btn,
+.loc-district-card-btn {
+    font-family: inherit;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.75rem !important;
+    padding: 0.85rem 1rem !important;
+    min-height: 62px !important;
+    border-radius: 14px !important;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+    color: var(--text-primary, #f1f5f9);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.loc-province-card-btn:hover,
+.loc-district-card-btn:hover {
+    background: rgba(6, 182, 212, 0.08);
+    border-color: rgba(6, 182, 212, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(6, 182, 212, 0.12);
+}
+
+.loc-district-card-btn.active {
+    background: rgba(6, 182, 212, 0.18);
+    border-color: var(--accent-cyan, #06b6d4);
+    color: var(--accent-cyan, #06b6d4);
+    font-weight: 600;
+}
+
+/* Card Pin Icon Wrapper */
+.loc-card-pin-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0 !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 9px !important;
+    background: rgba(6, 182, 212, 0.14) !important;
+    color: var(--accent-cyan, #06b6d4) !important;
+    transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.loc-province-card-btn:hover .loc-card-pin-icon,
+.loc-district-card-btn:hover .loc-card-pin-icon {
+    transform: scale(1.08);
+    background: rgba(6, 182, 212, 0.22);
+}
+
+/* Card Text Column */
+.loc-card-text-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px !important;
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    padding: 2px 0;
+}
+
+.loc-card-title {
+    font-family: inherit;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    color: var(--text-primary, #f1f5f9);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.45;
+}
+
+.loc-card-subtitle {
+    font-family: inherit;
+    font-size: 0.8rem !important;
+    color: var(--text-muted, #94a3b8);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.35;
+}
+
+/* 8. Right Column Preview Card */
+.loc-preview-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.loc-preview-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-primary, #f8fafc);
+}
+
+.loc-preview-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted, #94a3b8);
+    margin-top: 0.2rem;
+    font-family: monospace;
+}
+
+.loc-preview-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+    padding: 2rem 1rem;
+    border: 1.5px dashed var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+/* ============================================================
+   LIGHT MODE OVERRIDES FOR LOCATION PICKER
+   ============================================================ */
+[data-theme="light"] .enhanced-loc-modal {
+    background: #ffffff !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.2), 0 0 30px rgba(2, 132, 199, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .loc-tab-bar {
+    background: #f8fafc;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .loc-tab-btn {
+    color: #64748b;
+}
+
+[data-theme="light"] .loc-tab-btn:hover {
+    color: #0f172a;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .loc-tab-btn.active {
+    background: rgba(2, 132, 199, 0.12);
+    border-color: rgba(2, 132, 199, 0.35);
+    color: #0284c7;
+}
+
+[data-theme="light"] .loc-search-col {
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .loc-preview-col {
+    background: #f8fafc;
+}
+
+[data-theme="light"] input[type="text"].loc-search-input {
+    background: #ffffff !important;
+    border-color: #cbd5e1 !important;
+    color: #0f172a !important;
+}
+
+[data-theme="light"] input[type="text"].loc-search-input:focus {
+    border-color: #0284c7 !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+    background: #ffffff !important;
+}
+
+[data-theme="light"] input[type="text"].loc-search-input::placeholder {
+    color: #94a3b8 !important;
+}
+
+[data-theme="light"] .loc-section-label {
+    color: #475569;
+}
+
+[data-theme="light"] .loc-popular-chip {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #1e293b;
+}
+
+[data-theme="light"] .loc-popular-chip:hover {
+    background: rgba(2, 132, 199, 0.08);
+    border-color: rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="light"] .loc-popular-chip.active {
+    background: rgba(2, 132, 199, 0.15);
+    border-color: #0284c7;
+    color: #0284c7;
+}
+
+[data-theme="light"] .loc-result-card {
+    background: #ffffff;
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #0f172a;
+}
+
+[data-theme="light"] .loc-result-card:hover {
+    background: rgba(2, 132, 199, 0.06);
+    border-color: rgba(2, 132, 199, 0.3);
+}
+
+[data-theme="light"] .loc-result-card.active {
+    background: rgba(2, 132, 199, 0.12);
+    border-color: #0284c7;
+    box-shadow: 0 0 15px rgba(2, 132, 199, 0.15);
+}
+
+[data-theme="light"] .loc-result-card .loc-result-sub {
+    color: #64748b;
+}
+
+[data-theme="light"] .loc-result-card .loc-result-coords {
+    color: #94a3b8;
+}
+
+[data-theme="light"] .loc-result-badge-icon {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+}
+
+[data-theme="light"] .loc-tag-badge {
+    background: rgba(2, 132, 199, 0.12);
+    color: #0284c7;
+}
+
+[data-theme="light"] .loc-region-nav-btn {
+    background: #ffffff;
+    border-color: #cbd5e1;
+    color: #475569;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .loc-region-nav-btn:hover:not(:disabled) {
+    background: #f0f9ff;
+    color: #0284c7;
+    border-color: #0284c7;
+}
+
+[data-theme="light"] .loc-region-nav-btn:disabled,
+[data-theme="light"] .loc-region-nav-btn.hidden {
+    opacity: 0.25;
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+}
+
+[data-theme="light"] .loc-region-pill {
+    background: #f1f5f9;
+    border-color: rgba(0, 0, 0, 0.08);
+    color: #475569;
+}
+
+[data-theme="light"] .loc-region-pill:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+
+[data-theme="light"] .loc-region-pill.active {
+    background: #0284c7;
+    color: #ffffff;
+    border-color: #0284c7;
+}
+
+[data-theme="light"] .loc-province-card-btn,
+[data-theme="light"] .loc-district-card-btn {
+    background: #ffffff !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05) !important;
+}
+
+[data-theme="light"] .loc-province-card-btn:hover,
+[data-theme="light"] .loc-district-card-btn:hover {
+    background: #f8fafc !important;
+    border-color: rgba(2, 132, 199, 0.4) !important;
+    box-shadow: 0 6px 18px rgba(2, 132, 199, 0.15) !important;
+}
+
+[data-theme="light"] .loc-card-pin-icon {
+    background: rgba(2, 132, 199, 0.12) !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .loc-province-card-btn:hover .loc-card-pin-icon,
+[data-theme="light"] .loc-district-card-btn:hover .loc-card-pin-icon {
+    background: rgba(2, 132, 199, 0.22) !important;
+}
+
+[data-theme="light"] .loc-card-title {
+    color: #0f172a !important;
+}
+
+[data-theme="light"] .loc-card-subtitle {
+    color: #64748b !important;
+}
+
+[data-theme="light"] .loc-district-card-btn.active {
+    background: rgba(2, 132, 199, 0.15) !important;
+    border-color: #0284c7 !important;
+    color: #0284c7 !important;
+}
+
+[data-theme="light"] .loc-preview-title {
+    color: #0f172a;
+}
+
+[data-theme="light"] .loc-preview-placeholder {
+    background: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive for Location Picker */
+@media (max-width: 768px) {
+    .enhanced-loc-modal {
+        max-height: 88vh !important;
+        height: auto !important;
+        width: 95% !important;
+    }
+    .loc-modal-split-body {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+    .loc-search-col {
+        border-right: none !important;
+        border-bottom: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+        max-height: none !important;
+        flex: none !important;
+    }
+    .loc-preview-col {
+        width: 100% !important;
+        min-height: 260px;
+        padding-bottom: 2rem !important;
+    }
+    .loc-popular-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}

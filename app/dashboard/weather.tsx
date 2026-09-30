@@ -7,6 +7,7 @@ import {
     Droplets, Wind, RefreshCw, ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import { LocationPickerModal, LocationChips } from './location-picker';
+import { ThailandMapModal } from './thailand-map-modal';
 import { DEFAULT_LOCATIONS, type SavedLocation } from '@/app/data/thailand-locations';
 import { getWeatherMeta } from '@/utils/weather-codes';
 
@@ -26,10 +27,12 @@ export default function Weather() {
         fetchWeather,
         selectLocation,
         addLocation,
+        replaceLocation,
         removeLocation,
     } = useWeather();
 
     const [isPickerOpen, setIsPickerOpen] = useState<boolean>(false);
+    const [isMapOpen, setIsMapOpen] = useState<boolean>(false);
     const [hourlyViewMode, setHourlyViewMode] = useState<'next24' | 'today'>('next24');
 
     const railRef = useRef<HTMLDivElement>(null);
@@ -204,6 +207,7 @@ export default function Weather() {
                 onSelect={selectLocation}
                 onRemove={removeLocation}
                 onAddClick={() => setIsPickerOpen(true)}
+                onMapClick={() => setIsMapOpen(true)}
             />
 
             <div className="bento-weather-grid">
@@ -486,6 +490,26 @@ export default function Weather() {
                 onClose={() => setIsPickerOpen(false)}
                 onAddLocation={addLocation}
                 existingLocations={locations}
+                onReplaceLocation={replaceLocation}
+                activeLocationId={activeId}
+            />
+
+            {/* Thailand Map Selector Modal */}
+            <ThailandMapModal
+                isOpen={isMapOpen}
+                onClose={() => setIsMapOpen(false)}
+                existingLocations={locations}
+                activeLocationId={activeId}
+                onSelectLocation={(loc) => {
+                    if (locations.some((l) => l.id === loc.id)) {
+                        selectLocation(loc.id);
+                    } else {
+                        addLocation(loc);
+                    }
+                }}
+                onReplaceLocation={(oldId, newLoc) => {
+                    replaceLocation(oldId, newLoc);
+                }}
             />
         </div>
     );
